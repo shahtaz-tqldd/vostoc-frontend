@@ -1,0 +1,328 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap");
+
+.login-root {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f2f5;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle ambient blobs */
+.login-root::before,
+.login-root::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.35;
+  pointer-events: none;
+}
+.login-root::before {
+  width: 420px;
+  height: 420px;
+  background: #cbd5e1;
+  top: -120px;
+  left: -100px;
+}
+.login-root::after {
+  width: 340px;
+  height: 340px;
+  background: #94a3b8;
+  bottom: -100px;
+  right: -80px;
+}
+
+.login-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 400px;
+  background: #fff;
+  border-radius: 24px;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    0 20px 60px rgba(0, 0, 0, 0.08);
+  padding: 44px 36px 40px;
+  margin: 0 16px;
+}
+
+/* ── Logo area ── */
+.login-logo {
+  text-align: center;
+  margin-bottom: 36px;
+}
+.login-logo-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #1e293b, #334155);
+  border-radius: 14px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(30, 41, 59, 0.25);
+}
+.login-logo-mark svg {
+  width: 24px;
+  height: 24px;
+}
+.login-logo h1 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #1e293b;
+  letter-spacing: -0.3px;
+}
+.login-logo p {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-top: 4px;
+  font-weight: 400;
+}
+
+/* ── Role pills ── */
+.role-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 28px;
+  background: #f1f5f9;
+  border-radius: 12px;
+  padding: 4px;
+}
+.role-pill {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 4px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #64748b;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.role-pill:hover {
+  color: #1e293b;
+}
+.role-pill.active {
+  background: #fff;
+  color: #1e293b;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.role-pill .role-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+/* ── Form fields ── */
+.field-group {
+  margin-bottom: 16px;
+}
+.field-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 6px;
+  letter-spacing: 0.2px;
+}
+.field-label .type-badge {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: #94a3b8;
+  background: #f1f5f9;
+  padding: 2px 7px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.25s;
+}
+.field-label .type-badge.email {
+  color: #0891b2;
+  background: #ecfeff;
+}
+.field-label .type-badge.phone {
+  color: #16a34a;
+  background: #f0fdf4;
+}
+.field-label .type-badge.username {
+  color: #7c3aed;
+  background: #faf5ff;
+}
+
+.input-wrap {
+  position: relative;
+}
+.input-wrap input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #1e293b;
+  background: #fff;
+  outline: none;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+.input-wrap input::placeholder {
+  color: #cbd5e1;
+}
+.input-wrap input:focus {
+  border-color: #1e293b;
+  box-shadow: 0 0 0 3px rgba(30, 41, 59, 0.08);
+}
+.input-wrap input:disabled {
+  background: #f8fafc;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* Password toggle */
+.pw-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 6px;
+  transition: color 0.15s;
+}
+.pw-toggle:hover {
+  color: #64748b;
+}
+.input-wrap input[type="password"],
+.input-wrap input.pw-input {
+  padding-right: 42px;
+}
+
+/* ── Error ── */
+.error-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 20px;
+  animation: shake 0.35s ease;
+}
+.error-box .err-icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: #dc2626;
+  margin-top: 1px;
+}
+.error-box p {
+  font-size: 12.5px;
+  color: #991b1b;
+  line-height: 1.4;
+}
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-6px);
+  }
+  40% {
+    transform: translateX(6px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+/* ── Submit btn ── */
+.submit-btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #1e293b, #334155);
+  color: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    opacity 0.2s,
+    transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+  position: relative;
+  overflow: hidden;
+}
+.submit-btn:hover:not(:disabled) {
+  opacity: 0.88;
+}
+.submit-btn:active:not(:disabled) {
+  transform: scale(0.985);
+}
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Spinner */
+.spinner {
+  width: 17px;
+  height: 17px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.55s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Footer link ── */
+.login-footer {
+  text-align: center;
+  margin-top: 24px;
+}
+.login-footer p {
+  font-size: 12.5px;
+  color: #94a3b8;
+}
+.login-footer a {
+  color: #1e293b;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.login-footer a:hover {
+  color: #475569;
+}

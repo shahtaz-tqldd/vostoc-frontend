@@ -9,8 +9,11 @@ export type SidebarItem = {
   to: string;
 };
 
-export function Sidebar() {
-  const doctorSidebar: SidebarItem[] = [
+type SidebarProps = {
+  items?: SidebarItem[];
+};
+
+const doctorSidebar: SidebarItem[] = [
     { label: "My day", description: "Appointments and tasks", to: "/" },
     { label: "Prescribe", description: "Prescribe", to: "/prescribe" },
     {
@@ -21,7 +24,7 @@ export function Sidebar() {
     { label: "Messages", description: "Team updates", to: "/messages" },
   ];
 
-  const items = doctorSidebar;
+export function Sidebar({ items = doctorSidebar }: SidebarProps) {
 
   return (
     <div className="flex h-full flex-col gap-8">

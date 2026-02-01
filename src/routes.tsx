@@ -1,37 +1,21 @@
-import { createBrowserRouter } from "react-router-dom";
-import { DashboardLayout } from "./layouts/dashboard-layout";
-import PrescribePage from "./pages/doctors/prescribe";
-import OverviewPage from "./pages/doctors/overview";
+import { createBrowserRouter } from 'react-router-dom'
+import LoginPage from './pages/auth/login'
+import RoleIndexPage from './pages/role-index'
+import { RoleLayout } from './layouts/role-layout'
 
 export const routes = createBrowserRouter([
   {
-    path: "/",
-    element: <DashboardLayout />,
+    path: '/',
+    element: <RoleLayout />,
     children: [
       {
-        path: "/",
-        element: <OverviewPage />,
-      },
-      {
-        path: "/prescribe",
-        element: <PrescribePage />,
+        index: true,
+        element: <RoleIndexPage />,
       },
     ],
   },
-  // {
-  //   path: "/login",
-  //   element: <LoginPage />,
-  // },
-  // {
-  //   path: "/sign-up",
-  //   element: <RegisterPage />,
-  // },
-  // {
-  //   path: "/forget-password",
-  //   element: <ForgotPasswordPage />,
-  // },
-  // {
-  //   path: "/reset-password",
-  //   element: <ResetPasswordPage />,
-  // },
-]);
+  {
+    path: '/login',
+    element: <LoginPage />,
+  },
+])
