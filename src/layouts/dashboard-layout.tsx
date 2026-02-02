@@ -1,13 +1,25 @@
 import { Outlet } from "react-router-dom";
-import { Sidebar, SidebarItem } from "../components/layout/Sidebar";
+import { Sidebar, type SidebarItem } from "../components/layout/Sidebar";
 import { Topbar } from "../components/layout/Topbar";
 import { cn } from "../lib/utils";
 
 const sidebarItems: SidebarItem[] = [
   { label: "Overview", description: "Hospital performance", to: "/" },
-  { label: "Doctors", description: "Credentials and schedules", to: "/doctors" },
-  { label: "Appointments", description: "Slots and assignments", to: "/appointments" },
-  { label: "Departments", description: "Capacity planning", to: "/departments" },
+  {
+    label: "Doctors",
+    description: "Credentials and schedules",
+    to: "/doctors",
+  },
+  {
+    label: "Appointments",
+    description: "Slots and assignments",
+    to: "/appointments",
+  },
+  {
+    label: "Departments",
+    description: "Capacity planning",
+    to: "/departments",
+  },
 ];
 
 export function DashboardLayout() {
@@ -25,7 +37,7 @@ export function DashboardLayout() {
               <Topbar title="Dashboard" subtitle="Admin Portal" />
             </div>
           </header>
-          <main className={cn("flex-1 px-6 py-8 lg:px-10 lg:py-10")}>
+          <main className={cn("flex-1 p-6 md:p-8")}>
             <Outlet />
           </main>
         </div>

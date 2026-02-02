@@ -15,12 +15,12 @@ const adminSidebar: SidebarItem[] = [
   {
     label: "Doctors",
     description: "Credentials and schedules",
-    to: "/doctors",
+    to: "/doctors/list",
   },
   {
     label: "Appointments",
     description: "Slots and assignments",
-    to: "/appointments",
+    to: "/appointment-list",
   },
   {
     label: "Departments",
@@ -91,8 +91,7 @@ export function RoleLayout() {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  const sidebarItems =
-    effectiveRole === "admin" ? adminSidebar : doctorSidebar;
+  const sidebarItems = effectiveRole === "admin" ? adminSidebar : doctorSidebar;
   const topbarTitle =
     effectiveRole === "admin" ? "Admin dashboard" : "Doctor dashboard";
   const topbarSubtitle =
@@ -114,7 +113,7 @@ export function RoleLayout() {
               <Topbar title={topbarTitle} subtitle={topbarSubtitle} />
             </div>
           </header>
-          <main className={cn("flex-1 px-6 py-8 lg:px-10 lg:py-10")}>
+          <main className={cn("flex-1 p-6 md:p-8")}>
             <Outlet />
           </main>
         </div>
