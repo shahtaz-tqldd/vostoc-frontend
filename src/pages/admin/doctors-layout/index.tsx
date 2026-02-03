@@ -28,20 +28,13 @@ const DoctorsLayout = () => {
       departments.map((department) => ({
         label: department.name,
         value: department.id,
+        specialties: department.specialties?.map((item) => ({
+          label: item.name,
+          value: item.name,
+        })),
       })),
     [departments],
   );
-
-  const specialtyOptions = useMemo(() => {
-    const names = new Set<string>();
-    departments.forEach((department) => {
-      department.specialties?.forEach((specialty) => {
-        if (specialty?.name) names.add(specialty.name);
-      });
-    });
-
-    return Array.from(names).map((name) => ({ label: name, value: name }));
-  }, [departments]);
 
   const handleCreateDoctor = async (payload: AddDoctorPayload) => {
     const schedules = Object.entries(payload.schedule)
@@ -61,6 +54,8 @@ const DoctorsLayout = () => {
 
     await createDoctor({
       name: payload.name,
+      username: payload.username,
+      password: payload.password,
       department_id: payload.department,
       specialty: payload.specialty,
       contact_number: payload.contactNumber,
@@ -114,7 +109,6 @@ const DoctorsLayout = () => {
         open={addDoctor}
         onOpenChange={setAddDoctor}
         departmentOptions={departmentOptions}
-        specialtyOptions={specialtyOptions}
         onSubmit={handleCreateDoctor}
         isLoading={isCreatingDoctor}
       />

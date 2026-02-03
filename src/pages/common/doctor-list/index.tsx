@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { DataTable, type ColumnDef } from "@/components/table";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useGetDepartmentsQuery, useGetDoctorsQuery } from "@/features/doctors/doctorsApi";
 
 type Doctor = {
   id: string;
@@ -13,41 +14,6 @@ type Doctor = {
   imageUrl: string;
 };
 
-// Create mock doctor data
-const mockDoctors: Doctor[] = Array.from({ length: 55 }, (_, i) => {
-  const specialties = [
-    "Cardiology",
-    "Neurology",
-    "Pediatrics",
-    "Orthopedics",
-    "Dermatology",
-  ];
-  const departments = [
-    "Heart Center",
-    "Brain Institute",
-    "Children's Hospital",
-    "Bone & Joint",
-    "Skin Clinic",
-  ];
-  const statusOptions = ["Active", "On Leave", "Unavailable"];
-
-  const specialtyIndex = i % specialties.length;
-
-  return {
-    id: `DOC-${1000 + i}`,
-    name: `Dr. ${["Smith Rowan", "Johnson Nails", "Williams Shatner", "Brown Dan", "Jones Doe", "Garcia Miller", "Miller Righrs", "Davis Erikson"][i % 8]}`,
-    specialty: specialties[specialtyIndex],
-    department: departments[specialtyIndex],
-    contact: `${["+880 152 130 5382", "+880 152 130 3245", "+880 152 130 2146", "+880 152 130 5419"][i % 4]}`,
-    status: statusOptions[i % 3] as Doctor["status"],
-    imageUrl: `https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS-xnGLZJFli6FRyXSlm8-QnpJb9hh30HffEA&s`,
-  };
-});
-
-const departmentOptions = Array.from(
-  new Set(mockDoctors.map((doctor) => doctor.department)),
-).map((department) => ({ label: department, value: department }));
-
 // Define the columns for the doctor table
 const doctorColumns: ColumnDef<Doctor>[] = [
   {
@@ -55,15 +21,15 @@ const doctorColumns: ColumnDef<Doctor>[] = [
     accessorKey: "name",
     cell: (row) => (
       <div className="flex items-center gap-3">
-        <Avatar className="h-14 w-14">
+        <Avatar className="h-12 w-12">
           <AvatarImage src={row.imageUrl} alt={row.name} />
           <AvatarFallback>
             {row.name.split(" ")[1]?.charAt(0) || row.name.charAt(0)}
           </AvatarFallback>
         </Avatar>
         <div>
-          <div className="font-medium">{row.name}</div>
-          <div className="text-sm text-muted-foreground">{row.id}</div>
+          <div className="font-medium text-base">{row.name}</div>
+          <div className="text-sm text-muted-foreground uppercase">doc-{row.id.slice(-6)}</div>
         </div>
       </div>
     ),
@@ -104,6 +70,34 @@ export default function DoctorListPage() {
   const [department, setDepartment] = useState("");
   const [status, setStatus] = useState("");
 
+  const { data: doctorsData } = useGetDoctorsQuery();
+  const { data: departmentsData } = useGetDepartmentsQuery();
+
+  const doctors = useMemo<Doctor[]>(() => {
+    if (!doctorsData) {
+      return [];
+    }
+
+    return doctorsData.map((doctor) => ({
+      id: doctor.id,
+      name: doctor.name,
+      specialty: doctor.specialty?.name ?? "—",
+      department: doctor.department?.name ?? "—",
+      contact: doctor.contactNumber ?? "—",
+      status: "Active",
+      imageUrl: doctor.profileImageUrl ?? "",
+    }));
+  }, [doctorsData]);
+
+  const departmentOptions = useMemo(
+    () =>
+      (departmentsData ?? []).map((dept) => ({
+        label: dept.name,
+        value: dept.name,
+      })),
+    [departmentsData],
+  );
+
   useEffect(() => {
     setCurrentPage(1);
   }, [search, department, status]);
@@ -111,7 +105,7 @@ export default function DoctorListPage() {
   const filteredDoctors = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    return mockDoctors.filter((doctor) => {
+    return doctors.filter((doctor) => {
       const matchesSearch = query
         ? [
             doctor.name,
@@ -125,13 +119,15 @@ export default function DoctorListPage() {
             .includes(query)
         : true;
 
-      const matchesDepartment = department && doctor.department === department;
+      const matchesDepartment = department
+        ? doctor.department === department
+        : true;
 
-      const matchesStatus = status && doctor.status === status;
+      const matchesStatus = status ? doctor.status === status : true;
 
       return matchesSearch && matchesDepartment && matchesStatus;
     });
-  }, [department, search, status]);
+  }, [department, doctors, search, status]);
 
   const totalPages = Math.ceil(filteredDoctors.length / itemsPerPage);
   const paginatedData = filteredDoctors.slice(

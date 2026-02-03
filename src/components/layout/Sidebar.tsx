@@ -13,19 +13,7 @@ type SidebarProps = {
   items?: SidebarItem[];
 };
 
-const doctorSidebar: SidebarItem[] = [
-    { label: "My day", description: "Appointments and tasks", to: "/" },
-    { label: "Prescribe", description: "Prescribe", to: "/prescribe" },
-    {
-      label: "Patient list",
-      description: "History and notes",
-      to: "/patients",
-    },
-    { label: "Messages", description: "Team updates", to: "/messages" },
-  ];
-
-export function Sidebar({ items = doctorSidebar }: SidebarProps) {
-
+export function Sidebar({ items = [] }: SidebarProps) {
   return (
     <div className="flex h-full flex-col gap-8">
       <div className="space-y-2">

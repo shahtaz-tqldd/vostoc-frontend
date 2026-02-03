@@ -30,6 +30,10 @@ import {
 type SelectOption = {
   label: string;
   value: string;
+  specialties: {
+    label: string;
+    value: string;
+  }[];
 };
 
 type TimeRange = {
@@ -44,6 +48,8 @@ type WeeklySchedule = {
 
 export type AddDoctorPayload = {
   name: string;
+  username: string;
+  password: string;
   imageFile?: File;
   department: string;
   specialty: string;
@@ -56,7 +62,6 @@ type AddDoctorDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   departmentOptions: SelectOption[];
-  specialtyOptions: SelectOption[];
   onSubmit: (payload: AddDoctorPayload) => void | Promise<void>;
   isLoading?: boolean;
 };
@@ -67,13 +72,14 @@ export default function AddDoctorDialog({
   open,
   onOpenChange,
   departmentOptions,
-  specialtyOptions,
   onSubmit,
   isLoading = false,
 }: AddDoctorDialogProps) {
   const fileInputId = useId();
   const [currentStep, setCurrentStep] = useState(1);
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [department, setDepartment] = useState("");
@@ -82,6 +88,13 @@ export default function AddDoctorDialog({
   const [description, setDescription] = useState("");
   const [schedule, setSchedule] = useState<WeeklySchedule>({});
   const [isDragActive, setIsDragActive] = useState(false);
+
+  // Filter specialty options based on selected department
+  const filteredSpecialtyOptions = useMemo(() => {
+    if (!department) return [];
+    return departmentOptions.find((option) => option.value === department)
+      ?.specialties;
+  }, [department, departmentOptions]);
 
   useEffect(() => {
     if (!imageFile) {
@@ -96,14 +109,29 @@ export default function AddDoctorDialog({
 
   const isValid = useMemo(() => {
     if (currentStep === 1) {
-      return name.trim() && department && specialty && contactNumber.trim();
+      return (
+        name.trim() &&
+        username.trim() &&
+        password.trim() &&
+        department &&
+        specialty &&
+        contactNumber.trim()
+      );
     } else {
-      // For step 2, we need at least one day with at least one time range
       return Object.keys(schedule).some(
         (day) => schedule[day] && schedule[day].length > 0,
       );
     }
-  }, [currentStep, contactNumber, department, name, schedule, specialty]);
+  }, [
+    currentStep,
+    contactNumber,
+    department,
+    name,
+    schedule,
+    specialty,
+    password,
+    username,
+  ]);
 
   const addTimeRange = (day: string) => {
     setSchedule((prev) => ({
@@ -136,12 +164,15 @@ export default function AddDoctorDialog({
     }));
   };
 
-  const handleSubmit = async (event) => {
+  // Fixed TypeScript error by adding proper type annotation
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!isValid) return;
 
     await onSubmit({
       name: name.trim(),
+      username: username.trim(),
+      password: password.trim(),
       imageFile: imageFile ?? undefined,
       department,
       specialty,
@@ -152,6 +183,8 @@ export default function AddDoctorDialog({
 
     // Reset form
     setName("");
+    setUsername("");
+    setPassword("");
     setImageFile(null);
     setImagePreview("");
     setDepartment("");
@@ -190,24 +223,24 @@ export default function AddDoctorDialog({
 
         {/* Step Indicator */}
         <div className="flex items-center space-x-2 my-2">
-          <div>1. Basic Details</div>
+          <div className="text-cyan-600 font-semibold">1. Basic Details</div>
           <div
             className={cn(
               "w-8 h-0.5",
-              currentStep >= 2 ? "bg-gray-800" : "bg-gray-200",
+              currentStep >= 2 ? "bg-cyan-500" : "bg-gray-200",
             )}
           />
           <div
             className={cn(
               "flex rounded-full",
-              currentStep >= 2 ? "opacity-100" : "opacity-40",
+              currentStep >= 2 ? "text-cyan-600 font-semibold" : "opacity-40",
             )}
           >
             2. Schedule Setup
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
           {currentStep === 1 && (
             <>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -233,6 +266,28 @@ export default function AddDoctorDialog({
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
+                  <label className="text-sm font-medium">User name</label>
+                  <Input
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="dr.jane"
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Password</label>
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-2">
                   <label className="text-sm font-medium">Department</label>
                   <Select value={department} onValueChange={setDepartment}>
                     <SelectTrigger className="h-10" disabled={isLoading}>
@@ -249,12 +304,22 @@ export default function AddDoctorDialog({
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Specialty</label>
-                  <Select value={specialty} onValueChange={setSpecialty}>
-                    <SelectTrigger className="h-10" disabled={isLoading}>
-                      <SelectValue placeholder="Select specialty" />
+                  <Select
+                    value={specialty}
+                    onValueChange={setSpecialty}
+                    disabled={!department || isLoading}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue
+                        placeholder={
+                          department
+                            ? "Select specialty"
+                            : "Select department first"
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      {specialtyOptions.map((option) => (
+                      {filteredSpecialtyOptions?.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
                         </SelectItem>
@@ -276,7 +341,7 @@ export default function AddDoctorDialog({
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Profile image</label>
+                {/* <label className="text-sm font-medium">Profile image</label> */}
                 <input
                   id={fileInputId}
                   type="file"
@@ -318,10 +383,10 @@ export default function AddDoctorDialog({
                   <div>
                     <div className="flex items-center gap-1 text-sm font-medium text-ink-900">
                       <UploadCloud className="h-4 w-4" />
-                      Drop image here or click to upload
+                      Upload Profile Image
                     </div>
-                    <div className="text-xs text-ink-500">
-                      {imageFile?.name ?? "PNG, JPG, WEBP up to 5MB"}
+                    <div className="text-xs text-black/50 mt-2">
+                      {imageFile?.name ?? "PNG, JPG, WEBP up to 2MB"}
                     </div>
                   </div>
                 </label>
@@ -336,7 +401,6 @@ export default function AddDoctorDialog({
                 <div className="space-y-3 max-h-[60vh] overflow-y-auto">
                   {weekDays.map((day) => {
                     const daySchedule = schedule[day] || [];
-                    const hasSchedule = daySchedule.length > 0;
 
                     return (
                       <div key={day} className="border rounded-lg p-3">
@@ -374,6 +438,7 @@ export default function AddDoctorDialog({
                                     )
                                   }
                                   disabled={isLoading}
+                                  step={900}
                                   className="flex-1"
                                 />
                                 <span className="text-muted-foreground">
@@ -391,6 +456,7 @@ export default function AddDoctorDialog({
                                     )
                                   }
                                   disabled={isLoading}
+                                  step={900}
                                   className="flex-1"
                                 />
                                 <Button
@@ -433,6 +499,7 @@ export default function AddDoctorDialog({
                   type="button"
                   onClick={nextStep}
                   disabled={!isValid || isLoading}
+                  className={!isValid ? "opacity-50" : ""}
                 >
                   Next
                   <ChevronRight className="h-4 w-4 ml-1" />

@@ -39,7 +39,7 @@ export function AddDepartmentDialog({
     setSpecialties(specialties.filter((s) => s !== specialtyToRemove));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit: React.SubmitEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
     if (departmentName.trim()) {
       setError(null);

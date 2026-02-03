@@ -5,6 +5,7 @@ import { setCookie } from "@/lib/cookie";
 import { useAppDispatch } from "@/app/hooks";
 import type { Role } from "@/features/auth/authSlice";
 import { setRole } from "@/features/auth/authSlice";
+import { Stethoscope } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -36,7 +37,6 @@ const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [focused, setFocused] = useState<string | null>(null);
 
   const identifierType = detectType(identifier);
 
@@ -108,20 +108,10 @@ const LoginPage: React.FC = () => {
         <div className="login-card">
           {/* Logo */}
           <div className="login-logo">
-            <div className="login-logo-mark">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#fff"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                <polyline points="9 22 9 12 15 12 15 22" />
-              </svg>
+            <div className="bg-gray-800 h-12 w-12 flex items-center justify-center rounded-xl mx-auto">
+              <Stethoscope className="text-white" />
             </div>
-            <h1>MediBook</h1>
+            <h1 className="mt-2">Vostoc Sys</h1>
             <p>Appointment management system</p>
           </div>
 
@@ -167,8 +157,6 @@ const LoginPage: React.FC = () => {
                     setIdentifier(e.target.value);
                     setError(null);
                   }}
-                  onFocus={() => setFocused("id")}
-                  onBlur={() => setFocused(null)}
                   disabled={loading}
                 />
               </div>
@@ -189,8 +177,6 @@ const LoginPage: React.FC = () => {
                     setPassword(e.target.value);
                     setError(null);
                   }}
-                  onFocus={() => setFocused("pw")}
-                  onBlur={() => setFocused(null)}
                   disabled={loading}
                 />
                 <button

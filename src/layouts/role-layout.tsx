@@ -29,7 +29,7 @@ const adminSidebar: SidebarItem[] = [
   },
 ];
 
-const doctorSidebar: SidebarItem[] = [
+const receptionistSidebar: SidebarItem[] = [
   { label: "My day", description: "Appointments and tasks", to: "/" },
   { label: "Patient list", description: "History and notes", to: "/patients" },
   {
@@ -91,17 +91,24 @@ export function RoleLayout() {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  const sidebarItems = effectiveRole === "admin" ? adminSidebar : doctorSidebar;
+  const sidebarItems =
+    effectiveRole === "admin" ? adminSidebar : receptionistSidebar;
+
   const topbarTitle =
     effectiveRole === "admin" ? "Admin dashboard" : "Doctor dashboard";
+
   const topbarSubtitle =
     effectiveRole === "admin"
       ? "Create doctors, assign appointments, and oversee every slot."
       : "See upcoming appointments and review patient history.";
 
+  if (effectiveRole === "doctor") {
+    return <Outlet />;
+  }
+
   return (
     <div className="min-h-screen bg-mesh">
-      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[280px_1fr]">
+      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[340px_1fr]">
         <aside className="border-b border-ink-200/60 bg-white/90 h-screen sticky top-0 overflow-y-auto lg:border-b-0 lg:border-r">
           <div className="h-full px-6 py-8">
             <Sidebar items={sidebarItems} />

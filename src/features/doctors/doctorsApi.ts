@@ -20,12 +20,50 @@ export type DepartmentDetails = {
   doctors: { name: string; id: string; image_url: string }[]
 }
 
+export type DoctorSchedule = {
+  id: string
+  doctorId: string
+  day: string
+  startTime: string
+  endTime: string
+  createdAt: string
+  updatedAt: string
+}
+
+export type DoctorDetails = {
+  id: string
+  name: string
+  departmentId: string
+  specialtyId: string
+  contactNumber: string
+  description?: string
+  profileImageUrl?: string
+  createdAt: string
+  updatedAt: string
+  department?: {
+    id: string
+    name: string
+    createdAt: string
+    updatedAt: string
+  }
+  specialty?: {
+    id: string
+    name: string
+    departmentId: string
+    createdAt: string
+    updatedAt: string
+  }
+  schedules?: DoctorSchedule[]
+}
+
 export type DoctorScheduleEntry = {
   [dayName: string]: Array<{ start_time: string; end_time: string }>
 }
 
 export type CreateDoctorPayload = {
   name: string
+  username: string
+  password: string
   department_id: string
   specialty: string
   contact_number: string
@@ -61,6 +99,7 @@ export const doctorsApi = createApi({
           ]
           : [{ type: 'Department' as const, id: 'LIST' }],
     }),
+
     createDepartment: builder.mutation<Department, CreateDepartmentPayload>({
       query: (body) => ({
         url: '/departments',
@@ -76,10 +115,13 @@ export const doctorsApi = createApi({
       }),
       invalidatesTags: [{ type: 'Department', id: 'LIST' }],
     }),
+
     createDoctor: builder.mutation<void, CreateDoctorPayload>({
       query: (payload) => {
         const formData = new FormData()
         formData.append('name', payload.name)
+        formData.append('username', payload.username)
+        formData.append('password', payload.password)
         formData.append('department_id', payload.department_id)
         formData.append('specialty', payload.specialty)
         formData.append('contact_number', payload.contact_number)
@@ -99,6 +141,20 @@ export const doctorsApi = createApi({
       },
       invalidatesTags: [{ type: 'Doctor', id: 'LIST' }],
     }),
+
+    getDoctors: builder.query<DoctorDetails[], void>({
+      query: () => '/doctors',
+      providesTags: (result) =>
+        result
+          ? [
+            { type: 'Doctor' as const, id: 'LIST' },
+            ...result.map((doctor) => ({
+              type: 'Doctor' as const,
+              id: doctor.id,
+            })),
+          ]
+          : [{ type: 'Doctor' as const, id: 'LIST' }],
+    }),
   }),
 })
 
@@ -107,4 +163,5 @@ export const {
   useGetDepartmentsQuery,
   useDeleteDepartmentMutation,
   useCreateDoctorMutation,
+  useGetDoctorsQuery,
 } = doctorsApi
