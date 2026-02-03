@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
 import type { SidebarItem } from "@/components/layout/Sidebar";
-import { Topbar } from "@/components/layout/Topbar";
+import { CommonTopbar } from "@/components/layout/Topbar";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { useMeQuery } from "@/features/auth/authApi";
 import { clearAuth, setRole } from "@/features/auth/authSlice";
@@ -117,7 +117,7 @@ export function RoleLayout() {
         <div className="flex min-h-screen flex-col">
           <header className="sticky top-0 z-10 border-b border-ink-200/60 bg-white/80 backdrop-blur">
             <div className="px-6 py-4 lg:px-10">
-              <Topbar title={topbarTitle} subtitle={topbarSubtitle} />
+              <CommonTopbar title={topbarTitle} subtitle={topbarSubtitle} />
             </div>
           </header>
           <main className={cn("flex-1 p-6 md:p-8")}>

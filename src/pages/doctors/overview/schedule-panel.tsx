@@ -3,11 +3,11 @@ import { APPT_COUNTS, DAYS, WEEKLY_SCHEDULE } from "./mock_data";
 const SchedulePanel = () => {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-      <div className="px-4 pt-4 pb-2">
+      <div className="px-5 pt-4 pb-2">
         <h3 className="text-sm font-bold text-gray-700">This Week</h3>
         <p className="text-xs text-gray-400 mt-0.5">Feb 2 – 8, 2026</p>
       </div>
-      <div className="px-3 pb-4">
+      <div className="px-5 pb-4">
         <div className="grid grid-cols-7 gap-1">
           {DAYS.map((day) => {
             const s = WEEKLY_SCHEDULE[day];

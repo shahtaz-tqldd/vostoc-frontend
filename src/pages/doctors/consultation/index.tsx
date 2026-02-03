@@ -6,7 +6,7 @@ import PatientProfile from "./patient-profile";
 import { PATIENTS } from "./mock_data";
 import { Link, useParams } from "react-router-dom";
 import { TODAYS_APPOINTMENTS } from "../overview/mock_data";
-import { Topbar } from "@/components/layout/Topbar";
+import { DoctorTopbar } from "@/components/layout/Topbar";
 
 const ConsultationPage = () => {
   const { patientId } = useParams();
@@ -63,14 +63,10 @@ const ConsultationPage = () => {
     }, 1800);
   };
 
-  const topbarTitle = "Doctor dashboard";
-
-  const topbarSubtitle =
-    "See upcoming appointments and review patient history.";
   return (
     <div className="flex-1">
       <div className="px-4 md:px-8 py-4">
-        <Topbar title={topbarTitle} subtitle={topbarSubtitle} />
+        <DoctorTopbar />
       </div>
 
       <div className="p-4 md:p-8 flex flex-col h-full gap-4">
