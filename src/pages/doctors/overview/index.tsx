@@ -1,13 +1,26 @@
-import { Bell, Clock, Play, Square, User } from "lucide-react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import moment from "moment";
+
+// components
+import { DoctorTopbar } from "@/components/layout/Topbar";
+import { Button } from "@/components/ui/button";
+import SchedulePanel from "./schedule-panel";
+import DoctorsAppointmentList from "./appointment-list";
+import MyPatientList from "./my-patient-list";
+
+// services
+import { formatTime12, getDurationMinutes } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
-import SchedulePanel from "./schedule-panel";
-import { TODAYS_APPOINTMENTS } from "./mock_data";
-import DoctorsAppointmentList from "./appointment-list";
-import { DoctorTopbar } from "@/components/layout/Topbar";
-import MyPatientList from "./my-patient-list";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+// icons
+import { Bell, Clock, Play, Square, User } from "lucide-react";
+
+// data
+import { PATIENTS } from "../consultation/mock_data";
+import { DAYS, DOCTOR_SCHEDULES, TODAYS_APPOINTMENTS } from "./mock_data";
+
+type ConsultationStatus = "idle" | "in_progress" | "completed";
 
 export default function OverviewPage() {
   return (
@@ -24,7 +37,6 @@ export default function OverviewPage() {
 
         <div className="p-4 md:p-8 grid grid-cols-3 gap-4">
           <div className="col-span-2 space-y-5">
-            {/* stats */}
             <Stats />
             <SchedulePanel />
             <MyPatientList />
@@ -32,7 +44,7 @@ export default function OverviewPage() {
           <div className="col-span-1 space-y-5">
             <NextPatientCard />
             <Notification />
-            <DoctorScheduleWidget />
+            <DoctorSchedule />
           </div>
         </div>
       </div>
@@ -82,11 +94,11 @@ const Stats = () => {
 
 const Notification = () => {
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-4">
-      <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+    <div className="bg-white rounded-2xl border border-gray-200 p-6">
+      <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
         <Bell size={13} className="text-orange-500" /> Notification
       </h3>
-      <div className="space-y-2">
+      <div className="space-y-2 mt-4">
         {[
           {
             t: "Mohammad Hasan's stress test results pending",
@@ -115,132 +127,25 @@ const Notification = () => {
   );
 };
 
-// ─── Mock data for Next Patient queue ────────────────────────────────────────
-const PATIENT_QUEUE = [
-  {
-    id: "p1",
-    name: "Mohammad Hasan",
-    age: 45,
-    issue: "Chest pain & shortness of breath",
-    waitingSince: "9:15 AM",
-  },
-  {
-    id: "p2",
-    name: "Abdul Karim",
-    age: 58,
-    issue: "Pulmonary function follow-up",
-    waitingSince: "9:30 AM",
-  },
-  {
-    id: "p3",
-    name: "Fatima Begum",
-    age: 32,
-    issue: "Routine check-up",
-    waitingSince: "9:45 AM",
-  },
-];
-
-// ─── Mock schedule data ──────────────────────────────────────────────────────
-const DOCTOR_SCHEDULES = [
-  {
-    id: "a2d08eee-8511-4fa2-a828-300d2685b7f3",
-    doctorId: "f6995aca-2b26-4e28-8069-c1f486383fd5",
-    day: "MON",
-    startTime: "09:00",
-    endTime: "12:00",
-    createdAt: "2026-02-02T17:52:16.687Z",
-    updatedAt: "2026-02-02T17:52:16.687Z",
-  },
-  {
-    id: "b3e19fff-9622-5gb3-b939-411e3796c8g4",
-    doctorId: "f6995aca-2b26-4e28-8069-c1f486383fd5",
-    day: "MON",
-    startTime: "14:00",
-    endTime: "16:00",
-    createdAt: "2026-02-02T17:52:16.687Z",
-    updatedAt: "2026-02-02T17:52:16.687Z",
-  },
-  {
-    id: "c4f2a001-0733-6hc4-ca4a-522f4807d9h5",
-    doctorId: "f6995aca-2b26-4e28-8069-c1f486383fd5",
-    day: "TUE",
-    startTime: "10:00",
-    endTime: "13:00",
-    createdAt: "2026-02-02T17:52:16.687Z",
-    updatedAt: "2026-02-02T17:52:16.687Z",
-  },
-  {
-    id: "d5g3b112-1844-7id5-db5b-633g5918eai6",
-    doctorId: "f6995aca-2b26-4e28-8069-c1f486383fd5",
-    day: "WED",
-    startTime: "08:00",
-    endTime: "11:00",
-    createdAt: "2026-02-02T17:52:16.687Z",
-    updatedAt: "2026-02-02T17:52:16.687Z",
-  },
-  {
-    id: "e6h4c223-2955-8je6-ec6c-744h6a29fbj7",
-    doctorId: "f6995aca-2b26-4e28-8069-c1f486383fd5",
-    day: "WED",
-    startTime: "14:30",
-    endTime: "17:00",
-    createdAt: "2026-02-02T17:52:16.687Z",
-    updatedAt: "2026-02-02T17:52:16.687Z",
-  },
-  {
-    id: "f7i5d334-3a66-9kf7-fd7d-855i9b3agck8",
-    doctorId: "f6995aca-2b26-4e28-8069-c1f486383fd5",
-    day: "FRI",
-    startTime: "09:00",
-    endTime: "12:00",
-    createdAt: "2026-02-02T17:52:16.687Z",
-    updatedAt: "2026-02-02T17:52:16.687Z",
-  },
-  {
-    id: "g8j6e445-4b77-al08-ge8e-966j0c4bhdl9",
-    doctorId: "f6995aca-2b26-4e28-8069-c1f486383fd5",
-    day: "FRI",
-    startTime: "15:00",
-    endTime: "17:30",
-    createdAt: "2026-02-02T17:52:16.687Z",
-    updatedAt: "2026-02-02T17:52:16.687Z",
-  },
-];
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-const DAYS_OF_WEEK = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
-
-// Today is Tuesday Feb 3, 2026
-const TODAY_DAY = "TUE";
-
-function formatTime12(time24: string) {
-  const [h, m] = time24.split(":").map(Number);
-  const ampm = h >= 12 ? "PM" : "AM";
-  const h12 = h % 12 || 12;
-  return `${h12}:${m.toString().padStart(2, "0")} ${ampm}`;
-}
-
-function getDurationMinutes(start: string, end: string) {
-  const [sh, sm] = start.split(":").map(Number);
-  const [eh, em] = end.split(":").map(Number);
-  return eh * 60 + em - (sh * 60 + sm);
-}
-
-type ConsultationStatus = "idle" | "in_progress" | "completed";
-
 const NextPatientCard = () => {
   const [status, setStatus] = useState<ConsultationStatus>("completed");
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // derive
-  const isQueueEmpty = PATIENT_QUEUE.length === 0;
-  const currentPatient = PATIENT_QUEUE[currentIndex] ?? null;
-  const nextPatient = PATIENT_QUEUE[currentIndex + 1] ?? null;
-
-  const handleStart = () => setStatus("in_progress");
+  const isQueueEmpty = TODAYS_APPOINTMENTS.length === 0;
+  const currentAppointment = TODAYS_APPOINTMENTS[currentIndex] ?? null;
+  const nextAppointment = TODAYS_APPOINTMENTS[currentIndex + 1] ?? null;
+  const currentPatient = currentAppointment
+    ? PATIENTS[currentAppointment.patientId]
+    : null;
+  const nextPatient = nextAppointment
+    ? PATIENTS[nextAppointment.patientId]
+    : null;
+  const currentIssue = currentAppointment?.chief ?? "No chief complaint";
+  const waitingSince = currentAppointment?.time ?? "Unknown time";
 
   const handleEnd = () => {
-    if (currentIndex + 1 < PATIENT_QUEUE.length) {
+    if (currentIndex + 1 < TODAYS_APPOINTMENTS.length) {
       setCurrentIndex((i) => i + 1);
       setStatus("completed");
     } else {
@@ -295,9 +200,7 @@ const NextPatientCard = () => {
             <p className="text-sm font-semibold text-gray-800 truncate">
               {currentPatient.name}
             </p>
-            <p className="text-xs text-gray-500 truncate">
-              {currentPatient.issue}
-            </p>
+            <p className="text-xs text-gray-500 truncate">{currentIssue}</p>
             <p className="text-xs text-green-600 mt-0.5">
               Age {currentPatient.age} · Seeing now
             </p>
@@ -325,10 +228,10 @@ const NextPatientCard = () => {
     );
   }
 
-  // ── COMPLETED – ready to start next consultation ───────────────────────
+  // COMPLETED: ready to start next consultation
   if (status === "completed" && currentPatient) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-200 p-4">
+      <div className="bg-white rounded-2xl border border-gray-200 p-6">
         <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
           <User size={13} className="text-blue-500" /> Next Patient
         </h3>
@@ -350,26 +253,26 @@ const NextPatientCard = () => {
             <p className="text-sm font-semibold text-gray-800 truncate">
               {currentPatient.name}
             </p>
-            <p className="text-xs text-gray-500 truncate">
-              {currentPatient.issue}
-            </p>
+            <p className="text-xs text-gray-500 truncate">{currentIssue}</p>
             <p className="text-xs text-gray-400 mt-0.5">
-              Age {currentPatient.age} · Waiting since{" "}
-              {currentPatient.waitingSince}
+              Age {currentPatient.age} · Waiting since {waitingSince}
             </p>
           </div>
         </div>
 
         {/* start button */}
-        <Button onClick={handleStart} className="mt-6 w-full">
-          <Play size={12} fill="currentColor" /> Start Consultation
-        </Button>
+        <Link to={`/consultation/${currentPatient.id}`}>
+          <Button className="mt-6 w-full">
+            <Play size={12} fill="currentColor" /> Start Consultation
+          </Button>
+        </Link>
 
         {/* remaining count */}
-        {PATIENT_QUEUE.length - currentIndex - 1 > 0 && (
-          <p className="text-xs text-gray-400 text-center mt-2">
-            {PATIENT_QUEUE.length - currentIndex - 1} more patient
-            {PATIENT_QUEUE.length - currentIndex - 1 > 1 ? "s" : ""} waiting
+        {TODAYS_APPOINTMENTS.length - currentIndex - 1 > 0 && (
+          <p className="text-xs text-gray-400 text-center mt-4">
+            {TODAYS_APPOINTMENTS.length - currentIndex - 1} more patient
+            {TODAYS_APPOINTMENTS.length - currentIndex - 1 > 1 ? "s" : ""}{" "}
+            waiting
           </p>
         )}
       </div>
@@ -379,7 +282,8 @@ const NextPatientCard = () => {
   return null;
 };
 
-const DoctorScheduleWidget = () => {
+const DoctorSchedule = () => {
+  const TODAY_DAY = moment().format("ddd");
   const [selectedDay, setSelectedDay] = useState(TODAY_DAY);
 
   // build a set of days that have at least one schedule entry
@@ -391,14 +295,14 @@ const DoctorScheduleWidget = () => {
   ).sort((a, b) => a.startTime.localeCompare(b.startTime));
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-4">
-      <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+    <div className="bg-white rounded-2xl border border-gray-200 p-6">
+      <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
         <Clock size={13} className="text-indigo-500" /> My Schedule
       </h3>
 
       {/* Day pills */}
-      <div className="flex gap-1.5 mb-4 flex-wrap">
-        {DAYS_OF_WEEK.map((day) => {
+      <div className="flex gap-1.5 my-6 flex-wrap">
+        {DAYS.map((day) => {
           const hasSchedule = scheduledDays.has(day);
           const isToday = day === TODAY_DAY;
           const isSelected = day === selectedDay;
@@ -409,7 +313,7 @@ const DoctorScheduleWidget = () => {
               disabled={!hasSchedule}
               onClick={() => setSelectedDay(day)}
               className={cn(
-                "relative w-9 h-9 rounded-full text-xs font-bold transition-all flex flex-col items-center justify-center",
+                "relative w-10 h-10 rounded-full text-xs font-bold transition-all flex flex-col items-center justify-center",
                 // disabled – no schedule
                 !hasSchedule &&
                   "bg-gray-50 text-gray-300 cursor-not-allowed border border-dashed border-gray-200",

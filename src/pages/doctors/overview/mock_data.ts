@@ -1,3 +1,4 @@
+import { CheckCircle2, Circle, Loader2 } from "lucide-react";
 export const APPT_COUNTS = { Mon: 7, Tue: 5, Wed: 3, Thu: 8, Fri: 4, Sat: 0, Sun: 0 };
 export const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 export const WEEKLY_SCHEDULE = {
@@ -9,8 +10,6 @@ export const WEEKLY_SCHEDULE = {
   Sat: { start: "off", end: "off" },
   Sun: { start: "off", end: "off" },
 };
-
-import { CheckCircle2, Circle, Loader2 } from "lucide-react";
 
 export const CURRENT_DOCTOR = {
   id: "doc_1",
@@ -105,3 +104,69 @@ export const STATUS_CFG = {
     Icon: Circle,
   },
 };
+
+export const DOCTOR_SCHEDULES = [
+  {
+    id: "a2d08eee-8511-4fa2-a828-300d2685b7f3",
+    doctorId: "f6995aca-2b26-4e28-8069-c1f486383fd5",
+    day: "Mon",
+    startTime: "09:00",
+    endTime: "12:00",
+    createdAt: "2026-02-02T17:52:16.687Z",
+    updatedAt: "2026-02-02T17:52:16.687Z",
+  },
+  {
+    id: "b3e19fff-9622-5gb3-b939-411e3796c8g4",
+    doctorId: "f6995aca-2b26-4e28-8069-c1f486383fd5",
+    day: "Mon",
+    startTime: "14:00",
+    endTime: "16:00",
+    createdAt: "2026-02-02T17:52:16.687Z",
+    updatedAt: "2026-02-02T17:52:16.687Z",
+  },
+  {
+    id: "c4f2a001-0733-6hc4-ca4a-522f4807d9h5",
+    doctorId: "f6995aca-2b26-4e28-8069-c1f486383fd5",
+    day: "Tue",
+    startTime: "10:00",
+    endTime: "13:00",
+    createdAt: "2026-02-02T17:52:16.687Z",
+    updatedAt: "2026-02-02T17:52:16.687Z",
+  },
+  {
+    id: "d5g3b112-1844-7id5-db5b-633g5918eai6",
+    doctorId: "f6995aca-2b26-4e28-8069-c1f486383fd5",
+    day: "Wed",
+    startTime: "08:00",
+    endTime: "11:00",
+    createdAt: "2026-02-02T17:52:16.687Z",
+    updatedAt: "2026-02-02T17:52:16.687Z",
+  },
+  {
+    id: "e6h4c223-2955-8je6-ec6c-744h6a29fbj7",
+    doctorId: "f6995aca-2b26-4e28-8069-c1f486383fd5",
+    day: "Wed",
+    startTime: "14:30",
+    endTime: "17:00",
+    createdAt: "2026-02-02T17:52:16.687Z",
+    updatedAt: "2026-02-02T17:52:16.687Z",
+  },
+  {
+    id: "f7i5d334-3a66-9kf7-fd7d-855i9b3agck8",
+    doctorId: "f6995aca-2b26-4e28-8069-c1f486383fd5",
+    day: "Fri",
+    startTime: "09:00",
+    endTime: "12:00",
+    createdAt: "2026-02-02T17:52:16.687Z",
+    updatedAt: "2026-02-02T17:52:16.687Z",
+  },
+  {
+    id: "g8j6e445-4b77-al08-ge8e-966j0c4bhdl9",
+    doctorId: "f6995aca-2b26-4e28-8069-c1f486383fd5",
+    day: "Fri",
+    startTime: "15:00",
+    endTime: "17:30",
+    createdAt: "2026-02-02T17:52:16.687Z",
+    updatedAt: "2026-02-02T17:52:16.687Z",
+  },
+];

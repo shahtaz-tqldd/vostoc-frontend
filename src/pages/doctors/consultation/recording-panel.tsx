@@ -2,9 +2,9 @@ import { Clock, Mic, Sparkles, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 const RecordingPanel = ({
-  onTranscriptReady,
   prescriptionStage,
   onGenerate,
+  onOpenPrescription,
 }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -27,25 +27,18 @@ const RecordingPanel = ({
   useEffect(() => {
     if (transcript && transcript !== prevRef.current) {
       prevRef.current = transcript;
-      onTranscriptReady?.(transcript);
     }
   }, [transcript]);
+
   useEffect(() => () => clearInterval(intervalRef.current), []);
 
   const fmt = (s) =>
     `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
-  if (
-    prescriptionStage === "ready" ||
-    prescriptionStage === "saved" ||
-    prescriptionStage === "printed"
-  )
-    return null;
-
   return (
     <div className="bg-white rounded-2xl border border-gray-200">
       <style>{`@keyframes wb{from{height:15%}to{height:75%}}`}</style>
-      <div className="flex items-center justify-between px-4 pt-3 pb-1">
+      <div className="flex items-center justify-between p-6">
         <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
           <Mic
             size={13}
@@ -60,7 +53,7 @@ const RecordingPanel = ({
           </span>
         )}
       </div>
-      <div className="px-4 pb-4 space-y-3">
+      <div className="px-6 pb-6 space-y-4">
         {/* Waveform */}
         <div className="bg-gray-50 rounded-xl p-3.5 flex flex-col items-center gap-2">
           <div className="w-full h-10 flex items-center justify-center gap-px">
@@ -109,36 +102,47 @@ const RecordingPanel = ({
           </button>
         )}
 
-        {transcript && (
+        {transcript && prescriptionStage === "idle" && (
           <div className="space-y-3">
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
-              <p className="text-xs font-bold text-slate-500 mb-1.5 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-slate-400 rounded-full" />{" "}
-                Auto-transcript
+            <button
+              onClick={onGenerate}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white shadow-md transition-all"
+              style={{
+                background: "linear-gradient(135deg,#4f46e5,#7c3aed)",
+              }}
+            >
+              <Sparkles size={14} /> Generate Prescription
+            </button>
+          </div>
+        )}
+
+        {prescriptionStage === "generating" && (
+          <div className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-50 border border-indigo-200">
+            <div className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm text-indigo-600 font-bold">
+              Generating prescription…
+            </span>
+          </div>
+        )}
+
+        {(prescriptionStage === "ready" ||
+          prescriptionStage === "saved" ||
+          prescriptionStage === "printed") && (
+          <div className="space-y-2">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+              <p className="text-xs font-bold text-emerald-700">
+                Prescription ready for review.
               </p>
-              <p className="text-xs text-slate-700 leading-relaxed">
-                {transcript}
+              <p className="text-xs text-emerald-600 mt-1">
+                Open the drawer to edit medicines, advice, tests, and notes.
               </p>
             </div>
-            {prescriptionStage === "idle" && (
-              <button
-                onClick={onGenerate}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white shadow-md transition-all"
-                style={{
-                  background: "linear-gradient(135deg,#4f46e5,#7c3aed)",
-                }}
-              >
-                <Sparkles size={14} /> Generate Prescription
-              </button>
-            )}
-            {prescriptionStage === "generating" && (
-              <div className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-50 border border-indigo-200">
-                <div className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
-                <span className="text-sm text-indigo-600 font-bold">
-                  Generating prescription…
-                </span>
-              </div>
-            )}
+            <button
+              onClick={onOpenPrescription}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-sm transition-all"
+            >
+              <Sparkles size={14} /> Open Prescription Drawer
+            </button>
           </div>
         )}
       </div>

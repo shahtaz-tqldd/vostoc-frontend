@@ -24,7 +24,7 @@ const PatientProfile = ({ appointment }) => {
           style={{ background: "linear-gradient(135deg,#1e293b,#334155)" }}
         >
           <div
-            className="w-13 h-13 rounded-full flex items-center justify-center text-white text-lg font-bold border-2 border-white/30"
+            className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-bold border-2 border-white/30"
             style={{ background: "rgba(255,255,255,0.15)" }}
           >
             {p.avatar}
@@ -58,6 +58,26 @@ const PatientProfile = ({ appointment }) => {
               </p>
             </div>
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-xs text-gray-400 font-semibold">Occupation</p>
+              <p className="text-xs text-gray-700 font-bold mt-0.5">
+                {p.occupation}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 font-semibold">Insurance</p>
+              <p className="text-xs text-gray-700 font-bold mt-0.5">
+                {p.insurance}
+              </p>
+            </div>
+          </div>
+          <div>
+            <p className="text-xs text-gray-400 font-semibold">Address</p>
+            <p className="text-xs text-gray-700 font-bold mt-0.5">
+              {p.address}
+            </p>
+          </div>
           {p.allergies.length > 0 && (
             <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 flex items-start gap-2">
               <AlertTriangle
@@ -69,6 +89,21 @@ const PatientProfile = ({ appointment }) => {
                 <p className="text-xs text-red-600 mt-0.5">
                   {p.allergies.join(", ")}
                 </p>
+              </div>
+            </div>
+          )}
+          {p.careFlags?.length > 0 && (
+            <div>
+              <p className="text-xs text-gray-400 font-semibold">Care Flags</p>
+              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                {p.careFlags.map((flag) => (
+                  <span
+                    key={flag}
+                    className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-semibold border border-amber-200"
+                  >
+                    {flag}
+                  </span>
+                ))}
               </div>
             </div>
           )}
@@ -89,6 +124,76 @@ const PatientProfile = ({ appointment }) => {
               </div>
             </div>
           )}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+            <p className="text-xs text-gray-400 font-semibold mb-2">
+              Latest Vitals
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                ["BP", p.vitals.bp],
+                ["Pulse", `${p.vitals.pulse} bpm`],
+                ["Temp", p.vitals.temp],
+                ["SpO2", p.vitals.spo2],
+                ["Weight", `${p.vitals.weightKg} kg`],
+                ["BMI", p.vitals.bmi],
+              ].map(([label, value]) => (
+                <div key={label} className="text-xs">
+                  <p className="text-[10px] text-gray-400 font-semibold">
+                    {label}
+                  </p>
+                  <p className="text-xs font-bold text-slate-700">{value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-xs text-gray-400 font-semibold">Lifestyle</p>
+              <p className="text-xs text-gray-700 font-bold mt-0.5">
+                {p.lifestyle.activity} activity
+              </p>
+              <p className="text-[11px] text-gray-400 mt-0.5">
+                Smoking: {p.lifestyle.smoking}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 font-semibold">Last Visit</p>
+              <p className="text-xs text-gray-700 font-bold mt-0.5">
+                {p.lastVisit}
+              </p>
+              <p className="text-[11px] text-gray-400 mt-0.5">
+                Alcohol: {p.lifestyle.alcohol}
+              </p>
+            </div>
+          </div>
+          <div>
+            <p className="text-xs text-gray-400 font-semibold">Current Meds</p>
+            <div className="flex flex-wrap gap-1.5 mt-1.5">
+              {p.currentMeds.map((med) => (
+                <span
+                  key={med}
+                  className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-semibold border border-slate-200"
+                >
+                  {med}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-xs text-gray-400 font-semibold">
+              Recent Labs & Tests
+            </p>
+            <div className="mt-1 space-y-1">
+              {p.recentLabs.map((lab) => (
+                <div
+                  key={lab}
+                  className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1"
+                >
+                  {lab}
+                </div>
+              ))}
+            </div>
+          </div>
           <div className="border-t border-gray-100 pt-3">
             <p className="text-xs text-gray-400 font-semibold">
               Today's Chief Complaint
@@ -110,7 +215,7 @@ const PatientProfile = ({ appointment }) => {
             <div className="flex items-center gap-2">
               <FileText size={14} className="text-indigo-500" />
               <span className="text-sm font-bold text-gray-700">
-                Past Visits
+                Past Appointment History
               </span>
               <span className="text-xs bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full font-bold">
                 {visits.length}

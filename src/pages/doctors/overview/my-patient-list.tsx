@@ -61,7 +61,7 @@ const patientColumns: ColumnDef<Patient>[] = [
 
 const MyPatientList = () => {
   const [search, setSearch] = useState("");
-  const itemsPerPage = 10;
+  const itemsPerPage = 5;
   const [currentPage, setCurrentPage] = useState(1);
 
   const filteredPatients = mockPatients.filter((patient) =>
