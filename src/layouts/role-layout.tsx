@@ -9,23 +9,32 @@ import { clearAuth, setRole } from "@/features/auth/authSlice";
 import type { Role } from "@/features/auth/authSlice";
 import { deleteCookie, getCookie } from "@/lib/cookie";
 import { cn } from "@/lib/utils";
+import { ChartNoAxesGantt, Layers, Stethoscope, Users } from "lucide-react";
 
 const adminSidebar: SidebarItem[] = [
-  { label: "Overview", description: "Hospital performance", to: "/" },
+  {
+    label: "Overview",
+    description: "Hospital performance",
+    to: "/",
+    icon: Layers,
+  },
   {
     label: "Doctors",
     description: "Credentials and schedules",
     to: "/doctors/list",
+    icon: Stethoscope,
   },
   {
     label: "Appointments",
     description: "Slots and assignments",
     to: "/appointment-list",
+    icon: ChartNoAxesGantt,
   },
   {
-    label: "Departments",
+    label: "Receptionist",
     description: "Capacity planning",
-    to: "/departments",
+    to: "/receptionist",
+    icon: Users,
   },
 ];
 
@@ -108,14 +117,14 @@ export function RoleLayout() {
 
   return (
     <div className="min-h-screen bg-mesh">
-      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[340px_1fr]">
-        <aside className="border-b border-ink-200/60 bg-white/90 h-screen sticky top-0 overflow-y-auto lg:border-b-0 lg:border-r">
-          <div className="h-full px-6 py-8">
+      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[320px_1fr]">
+        <aside className="border-b border-ink-200/60 bg-white/50 backdrop-blur-sm h-screen sticky top-0 overflow-y-auto lg:border-b-0 lg:border-r">
+          <div className="h-full p-6">
             <Sidebar items={sidebarItems} />
           </div>
         </aside>
         <div className="flex min-h-screen flex-col">
-          <header className="sticky top-0 z-10 border-b border-ink-200/60 bg-white/80 backdrop-blur">
+          <header className="">
             <div className="px-6 py-4 lg:px-10">
               <CommonTopbar title={topbarTitle} subtitle={topbarSubtitle} />
             </div>

@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
 
 type Option = { label: string; value: string };
 
@@ -43,12 +44,15 @@ export function FilterBar({
   return (
     <div className={`flex flex-wrap items-center gap-2 mr-6 ${className}`}>
       {search && (
-        <Input
-          value={search.value}
-          placeholder={search.placeholder ?? "Search..."}
-          onChange={(e) => search.onChange(e.target.value)}
-          className="h-9 !w-[220px]"
-        />
+        <div className="relative">
+          <Input
+            value={search.value}
+            placeholder={search.placeholder ?? "Search..."}
+            onChange={(e) => search.onChange(e.target.value)}
+            className="h-9 !w-[260px] !pl-8"
+          />
+          <Search size={14} className="opacity-50 absolute top-1/2 -translate-y-1/2 left-2.5" />
+        </div>
       )}
 
       {selects?.map((select) => (

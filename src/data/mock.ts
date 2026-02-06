@@ -33,6 +33,14 @@ export const adminAppointments: Appointment[] = [
     time: '11:15 AM',
     status: 'Completed',
   },
+  {
+    id: 'APT-1045',
+    patient: 'Nikolas Cage',
+    doctor: 'Dr. R. Miller',
+    department: 'Cardiology',
+    time: '11:15 AM',
+    status: 'Completed',
+  },
 ]
 
 export const doctorLoads: DoctorLoad[] = [

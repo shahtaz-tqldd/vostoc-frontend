@@ -46,7 +46,7 @@ const DepartmentListPage = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {data?.map((department) => (
         <Card key={department.id} className="h-full flex flex-col">
           <CardHeader className="pb-3">

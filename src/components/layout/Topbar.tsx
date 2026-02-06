@@ -1,7 +1,8 @@
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Avatar } from "../ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { CURRENT_DOCTOR } from "@/pages/doctors/overview/mock_data";
+import { Plus, Search } from "lucide-react";
 
 export type TopbarProps = {
   title: string;
@@ -18,17 +19,29 @@ export function CommonTopbar({ title, subtitle }: TopbarProps) {
         <p className="text-sm text-ink-600">{subtitle}</p>
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <div className="min-w-[220px]">
-          <Input placeholder="Search patients, doctors, slots" />
+        <div className="relative">
+          <Input
+            placeholder="Search patients, doctors, slots"
+            className="h-9 !w-[260px] !pl-8"
+          />
+          <Search
+            size={14}
+            className="opacity-50 absolute top-1/2 -translate-y-1/2 left-2.5"
+          />
         </div>
-        <Button variant="secondary">New appointment</Button>
-        <div className="flex items-center gap-2 rounded-full border border-ink-200/70 bg-white/70 px-3 py-2">
-          <Avatar />
-          <div className="text-xs">
-            <div className="font-semibold text-ink-900">Ariana Lewis</div>
-            <div className="text-ink-500">Ops Lead</div>
-          </div>
-        </div>
+
+        <Button variant="primary">
+          <Plus size={14} />
+          New appointment
+        </Button>
+
+        <Avatar className="h-9 w-9">
+          <AvatarImage src={CURRENT_DOCTOR.avatar} alt={CURRENT_DOCTOR.name} />
+          <AvatarFallback>
+            {CURRENT_DOCTOR.name.split(" ")[1]?.charAt(0) ||
+              CURRENT_DOCTOR.name.charAt(0)}
+          </AvatarFallback>
+        </Avatar>
       </div>
     </div>
   );
@@ -49,17 +62,24 @@ export function DoctorTopbar() {
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <div className="min-w-[220px]">
-          <Input placeholder="Search patients, doctors, slots" />
+        <div className="relative">
+          <Input
+            placeholder="Search patients, reports"
+            className="h-9 !w-[260px] !pl-8"
+          />
+          <Search
+            size={14}
+            className="opacity-50 absolute top-1/2 -translate-y-1/2 left-2.5"
+          />
         </div>
-        <Button variant="secondary">New appointment</Button>
-        <div className="flex items-center gap-2 rounded-full border border-ink-200/70 bg-white/70 px-3 py-2">
-          <Avatar />
-          <div className="text-xs">
-            <div className="font-semibold text-ink-900">Ariana Lewis</div>
-            <div className="text-ink-500">Ops Lead</div>
-          </div>
-        </div>
+
+        <Avatar className="h-9 w-9">
+          <AvatarImage src={CURRENT_DOCTOR.avatar} alt={CURRENT_DOCTOR.name} />
+          <AvatarFallback>
+            {CURRENT_DOCTOR.name.split(" ")[1]?.charAt(0) ||
+              CURRENT_DOCTOR.name.charAt(0)}
+          </AvatarFallback>
+        </Avatar>
       </div>
     </div>
   );
