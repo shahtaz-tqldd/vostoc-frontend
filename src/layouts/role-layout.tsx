@@ -104,7 +104,7 @@ export function RoleLayout() {
     effectiveRole === "admin" ? adminSidebar : receptionistSidebar;
 
   const topbarTitle =
-    effectiveRole === "admin" ? "Admin dashboard" : "Doctor dashboard";
+    effectiveRole === "admin" ? "Admin dashboard" : "Receptionist dashboard";
 
   const topbarSubtitle =
     effectiveRole === "admin"

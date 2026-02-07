@@ -3,6 +3,10 @@ import { Input } from "../ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { CURRENT_DOCTOR } from "@/pages/doctors/overview/mock_data";
 import { Plus, Search } from "lucide-react";
+import { useLocation } from "react-router-dom";
+import AddReceptionistDialog from "@/pages/admin/receptionist-list/add-receptionist-dialog";
+import { useMemo, useState } from "react";
+import { useGetDepartmentsQuery } from "@/features/department/departmentApi";
 
 export type TopbarProps = {
   title: string;
@@ -10,40 +14,147 @@ export type TopbarProps = {
 };
 
 export function CommonTopbar({ title, subtitle }: TopbarProps) {
+  const location = useLocation();
+  const isReceptionPage = location.pathname === "/receptionist";
+  const [addReceptionist, setAddReceptionist] = useState(false);
+  const { data: departments = [] } = useGetDepartmentsQuery();
+
+  const departmentOptions = useMemo(
+    () =>
+      departments.map((department) => ({
+        label: department.name,
+        value: department.id,
+        specialties: department.specialties?.map((item) => ({
+          label: item.name,
+          value: item.name,
+        })),
+      })),
+    [departments],
+  );
   return (
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-      <div className="space-y-1">
-        <h2 className="font-display text-2xl font-semibold text-ink-900">
-          {title}
-        </h2>
-        <p className="text-sm text-ink-600">{subtitle}</p>
-      </div>
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative">
-          <Input
-            placeholder="Search patients, doctors, slots"
-            className="h-9 !w-[260px] !pl-8"
-          />
-          <Search
-            size={14}
-            className="opacity-50 absolute top-1/2 -translate-y-1/2 left-2.5"
-          />
+    <>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="space-y-1">
+          <h2 className="font-display text-2xl font-semibold text-ink-900">
+            {title}
+          </h2>
+          <p className="text-sm text-ink-600">{subtitle}</p>
         </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative">
+            <Input
+              placeholder="Search patients, doctors, slots"
+              className="h-9 !w-[260px] !pl-8"
+            />
+            <Search
+              size={14}
+              className="opacity-50 absolute top-1/2 -translate-y-1/2 left-2.5"
+            />
+          </div>
 
-        <Button variant="primary">
-          <Plus size={14} />
-          New appointment
-        </Button>
+          <Button
+            variant="primary"
+            onClick={
+              isReceptionPage
+                ? () => setAddReceptionist(true)
+                : () => setAddReceptionist(false)
+            }
+          >
+            <Plus size={14} />
+            {isReceptionPage ? "Add Receptionist" : "New appointment"}
+          </Button>
 
-        <Avatar className="h-9 w-9">
-          <AvatarImage src={CURRENT_DOCTOR.avatar} alt={CURRENT_DOCTOR.name} />
-          <AvatarFallback>
-            {CURRENT_DOCTOR.name.split(" ")[1]?.charAt(0) ||
-              CURRENT_DOCTOR.name.charAt(0)}
-          </AvatarFallback>
-        </Avatar>
+          <Avatar className="h-9 w-9">
+            <AvatarImage
+              src={CURRENT_DOCTOR.avatar}
+              alt={CURRENT_DOCTOR.name}
+            />
+            <AvatarFallback>
+              {CURRENT_DOCTOR.name.split(" ")[1]?.charAt(0) ||
+                CURRENT_DOCTOR.name.charAt(0)}
+            </AvatarFallback>
+          </Avatar>
+        </div>
       </div>
-    </div>
+      <AddReceptionistDialog
+        open={addReceptionist}
+        onOpenChange={setAddReceptionist}
+        departmentOptions={departmentOptions}
+      />
+    </>
+  );
+}
+
+
+export function ReceptionistTopbar({ title, subtitle }: TopbarProps) {
+  const location = useLocation();
+  const isReceptionPage = location.pathname === "/receptionist";
+  const [addReceptionist, setAddReceptionist] = useState(false);
+  const { data: departments = [] } = useGetDepartmentsQuery();
+
+  const departmentOptions = useMemo(
+    () =>
+      departments.map((department) => ({
+        label: department.name,
+        value: department.id,
+        specialties: department.specialties?.map((item) => ({
+          label: item.name,
+          value: item.name,
+        })),
+      })),
+    [departments],
+  );
+  return (
+    <>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="space-y-1">
+          <h2 className="font-display text-2xl font-semibold text-ink-900">
+            {title}
+          </h2>
+          <p className="text-sm text-ink-600">{subtitle}</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative">
+            <Input
+              placeholder="Search patients, doctors, slots"
+              className="h-9 !w-[260px] !pl-8"
+            />
+            <Search
+              size={14}
+              className="opacity-50 absolute top-1/2 -translate-y-1/2 left-2.5"
+            />
+          </div>
+
+          <Button
+            variant="primary"
+            onClick={
+              isReceptionPage
+                ? () => setAddReceptionist(true)
+                : () => setAddReceptionist(false)
+            }
+          >
+            <Plus size={14} />
+            {isReceptionPage ? "Add Receptionist" : "New appointment"}
+          </Button>
+
+          <Avatar className="h-9 w-9">
+            <AvatarImage
+              src={CURRENT_DOCTOR.avatar}
+              alt={CURRENT_DOCTOR.name}
+            />
+            <AvatarFallback>
+              {CURRENT_DOCTOR.name.split(" ")[1]?.charAt(0) ||
+                CURRENT_DOCTOR.name.charAt(0)}
+            </AvatarFallback>
+          </Avatar>
+        </div>
+      </div>
+      <AddReceptionistDialog
+        open={addReceptionist}
+        onOpenChange={setAddReceptionist}
+        departmentOptions={departmentOptions}
+      />
+    </>
   );
 }
 

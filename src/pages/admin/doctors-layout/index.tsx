@@ -4,10 +4,8 @@ import { useMemo, useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { AddDepartmentDialog } from "../department-list/add-department-dialog";
 import AddDoctorDialog, { type AddDoctorPayload } from "./add-doctor-dialog";
-import {
-  useCreateDoctorMutation,
-  useGetDepartmentsQuery,
-} from "@/features/doctors/doctorsApi";
+import { useCreateDoctorMutation } from "@/features/doctors/doctorsApi";
+import { useGetDepartmentsQuery } from "@/features/department/departmentApi";
 
 const DoctorsLayout = () => {
   const location = useLocation();

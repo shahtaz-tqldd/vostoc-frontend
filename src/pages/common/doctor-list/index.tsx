@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { DataTable, type ColumnDef } from "@/components/table";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useGetDepartmentsQuery, useGetDoctorsQuery } from "@/features/doctors/doctorsApi";
+import { useGetDoctorsQuery } from "@/features/doctors/doctorsApi";
+import { useGetDepartmentsQuery } from "@/features/department/departmentApi";
 
 type Doctor = {
   id: string;
@@ -29,7 +30,9 @@ const doctorColumns: ColumnDef<Doctor>[] = [
         </Avatar>
         <div>
           <div className="font-medium text-base">{row.name}</div>
-          <div className="text-sm text-muted-foreground uppercase">doc-{row.id.slice(-6)}</div>
+          <div className="text-sm text-muted-foreground uppercase">
+            doc-{row.id.slice(-6)}
+          </div>
         </div>
       </div>
     ),
@@ -50,14 +53,13 @@ const doctorColumns: ColumnDef<Doctor>[] = [
     header: "Status",
     accessorKey: "status",
     cell: (row) => {
-      const status = row.status;
       const variant = {
-        Active: "mint",
-        "On Leave": "ink",
-        Unavailable: "coral",
-      }[status] as "mint" | "ink" | "coral";
+        Active: "success",
+        "On Leave": "failed",
+        Unavailable: "disabled",
+      }[row.status] as "success" | "failed" | "disabled";
 
-      return <Badge variant={variant}>{status}</Badge>;
+      return <StatusBadge status={variant} label={row.status} />;
     },
   },
 ];
@@ -78,7 +80,7 @@ export default function DoctorListPage() {
       return [];
     }
 
-    return doctorsData.map((doctor) => ({
+    return doctorsData?.data?.map((doctor) => ({
       id: doctor.id,
       name: doctor.name,
       specialty: doctor.specialty?.name ?? "—",
@@ -178,6 +180,7 @@ export default function DoctorListPage() {
       currentPage={currentPage}
       totalPages={totalPages}
       setCurrentPage={setCurrentPage}
+      totalItems={doctorsData?.meta.total}
     />
   );
 }

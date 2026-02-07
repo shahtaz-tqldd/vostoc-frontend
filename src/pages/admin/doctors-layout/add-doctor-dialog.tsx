@@ -25,6 +25,7 @@ import {
   Clock,
   UploadCloud,
   UserRound,
+  MoveRight,
 } from "lucide-react";
 
 type SelectOption = {
@@ -223,17 +224,15 @@ export default function AddDoctorDialog({
 
         {/* Step Indicator */}
         <div className="flex items-center space-x-2 my-2">
-          <div className="text-cyan-600 font-semibold">1. Basic Details</div>
-          <div
-            className={cn(
-              "w-8 h-0.5",
-              currentStep >= 2 ? "bg-cyan-500" : "bg-gray-200",
-            )}
+          <div className="text-blue-500 font-semibold">1. Basic Details</div>
+          <MoveRight
+            className={cn(currentStep >= 2 ? "text-gray-500" : "text-gray-200")}
           />
+
           <div
             className={cn(
               "flex rounded-full",
-              currentStep >= 2 ? "text-cyan-600 font-semibold" : "opacity-40",
+              currentStep >= 2 ? "text-blue-500 font-semibold" : "opacity-40",
             )}
           >
             2. Schedule Setup

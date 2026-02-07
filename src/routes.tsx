@@ -7,6 +7,7 @@ import DoctorListPage from "./pages/common/doctor-list";
 import DoctorsLayout from "./pages/admin/doctors-layout";
 import DepartmentListPage from "./pages/admin/department-list";
 import ConsultationPage from "./pages/doctors/consultation";
+import ReceptionistListPage from "./pages/admin/receptionist-list";
 
 export const routes = createBrowserRouter([
   {
@@ -34,6 +35,10 @@ export const routes = createBrowserRouter([
       {
         path: "/appointment-list",
         element: <AppointmentListPage />,
+      },
+      {
+        path: "/receptionist",
+        element: <ReceptionistListPage />,
       },
       {
         path: "/consultation/:patientId",

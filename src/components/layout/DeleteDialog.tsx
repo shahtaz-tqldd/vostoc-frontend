@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
 
 type DeleteDialogProps = {
   open: string | null;
@@ -37,8 +38,11 @@ const DeleteDialog = ({
 
   return (
     <Dialog open={Boolean(open)} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[420px]">
+      <DialogContent className="sm:max-w-[460px]">
         <DialogHeader>
+          <div className="h-12 w-12 rounded-xl bg-red-500/10 flex items-center justify-center mb-3.5">
+            <Trash2 className="text-red-500"/>
+          </div>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
             {description ?? fallbackDescription}
@@ -47,7 +51,7 @@ const DeleteDialog = ({
         <DialogFooter>
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             onClick={() => onOpenChange(false)}
             disabled={isLoading}
           >
@@ -57,7 +61,7 @@ const DeleteDialog = ({
             type="button"
             onClick={onConfirm}
             disabled={isLoading}
-            className="bg-red-600 text-white hover:bg-red-700"
+            className="bg-red-600 text-white hover:bg-red-700 !border-none"
           >
             {isLoading ? "Deleting..." : confirmLabel}
           </Button>

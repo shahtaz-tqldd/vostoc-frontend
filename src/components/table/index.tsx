@@ -17,6 +17,7 @@ import {
 import { FilterBar } from "./filter";
 import type { FilterSelect } from "./filter";
 import { Pagination } from "./pagination";
+import NoDataFound from "../layout/NoDataFound";
 
 export interface ColumnDef<T> {
   header: string;
@@ -45,6 +46,7 @@ interface DataTableProps<T> {
   currentPage: number;
   totalPages: number;
   setCurrentPage: (page: number) => void;
+  totalItems?: number;
 }
 
 export function DataTable<T>({
@@ -56,6 +58,7 @@ export function DataTable<T>({
   currentPage,
   totalPages,
   setCurrentPage,
+  totalItems = 0,
 }: DataTableProps<T>) {
   return (
     <>
@@ -90,6 +93,13 @@ export function DataTable<T>({
               </TableRow>
             </TableHeader>
             <TableBody>
+              {!totalItems && (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="py-12">
+                    <NoDataFound />
+                  </TableCell>
+                </TableRow>
+              )}
               {data.map((row, index) => (
                 <TableRow key={index}>
                   {columns.map((column) => (
