@@ -14,10 +14,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { adminAppointments, doctorLoads } from "@/data/mock";
 import { TODAYS_APPOINTMENTS } from "@/pages/doctors/overview/mock_data";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { PATIENTS } from "@/pages/doctors/consultation/mock_data";
+import { Square, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const statusTone: Record<string, "mint" | "coral" | "ink"> = {
   Confirmed: "mint",
@@ -31,12 +34,10 @@ export default function ReceptionistOverviewPage() {
       <div className="col-span-2 space-y-4">
         <Stats />
         <AppointmentList />
-        <DepartmentPerformance />
       </div>
       <div className="col-span-1 space-y-4">
+        <NextPatientCard />
         <ActiveDoctorList />
-        <Notification />
-        <QuickAction />
       </div>
     </div>
   );
@@ -85,122 +86,6 @@ const AppointmentList = () => {
   );
 };
 
-const DepartmentPerformance = () => {
-  const departments = [
-    {
-      name: "Cardiology",
-      completionRate: 94,
-      avgWaitTime: "12 min",
-      status: "good",
-    },
-    {
-      name: "Neurology",
-      completionRate: 88,
-      avgWaitTime: "18 min",
-      status: "good",
-    },
-    {
-      name: "Orthopedics",
-      completionRate: 76,
-      avgWaitTime: "28 min",
-      status: "warning",
-    },
-    {
-      name: "Pediatrics",
-      completionRate: 91,
-      avgWaitTime: "15 min",
-      status: "good",
-    },
-  ];
-
-  const topPerformer = departments.reduce((prev, current) =>
-    prev.completionRate > current.completionRate ? prev : current,
-  );
-
-  const needsAttention = departments.filter((d) => d.status === "warning");
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Department performance</CardTitle>
-        <CardDescription>
-          Real-time metrics across hospital departments
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6 mt-6">
-        <div className="grid gap-4 md:grid-cols-2">
-          {departments.map((dept) => (
-            <div
-              key={dept.name}
-              className="rounded-2xl border border-ink-200/70 bg-white/80 p-4"
-            >
-              <div className="flex items-start justify-between">
-                <div className="text-sm font-semibold text-ink-900">
-                  {dept.name}
-                </div>
-                <div
-                  className={cn(
-                    "h-2 w-2 rounded-full",
-                    dept.status === "good" ? "bg-green-500" : "bg-yellow-500",
-                  )}
-                />
-              </div>
-              <div className="mt-3 flex items-baseline gap-1">
-                <div className="text-2xl font-semibold text-ink-900">
-                  {dept.completionRate}%
-                </div>
-                <div className="text-xs text-ink-500">completion rate</div>
-              </div>
-              <div className="mt-2 text-xs text-ink-500">
-                Avg wait: {dept.avgWaitTime}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="rounded-2xl border border-ink-200/70 bg-ink-900/95 p-5 text-white">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <div className="text-sm text-white/70">
-                {needsAttention.length > 0
-                  ? "Needs attention"
-                  : "Top performer"}
-              </div>
-              <div className="mt-1 text-xl font-semibold">
-                {needsAttention.length > 0
-                  ? needsAttention.map((d) => d.name).join(", ")
-                  : topPerformer.name}
-              </div>
-            </div>
-            <Button variant="secondary" className="bg-white text-ink-900">
-              View details
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-const QuickAction = () => {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Quick actions</CardTitle>
-        <CardDescription>Common tasks for administrators</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3 mt-6">
-        <Button className="w-full">Create doctor profile</Button>
-        <Button variant="secondary" className="w-full">
-          Assign doctor to slot
-        </Button>
-        <Button variant="ghost" className="w-full">
-          View department analytics
-        </Button>
-      </CardContent>
-    </Card>
-  );
-};
-
 const Stats = () => {
   const completed = TODAYS_APPOINTMENTS.filter(
     (a) => a.status === "completed",
@@ -241,6 +126,159 @@ const Stats = () => {
   );
 };
 
+const NextPatientCard = () => {
+  const [status, setStatus] = useState("completed");
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // derive
+  const isQueueEmpty = TODAYS_APPOINTMENTS.length === 0;
+  const currentAppointment = TODAYS_APPOINTMENTS[currentIndex] ?? null;
+  const nextAppointment = TODAYS_APPOINTMENTS[currentIndex + 1] ?? null;
+  const currentPatient = currentAppointment
+    ? PATIENTS[currentAppointment.patientId]
+    : null;
+  const nextPatient = nextAppointment
+    ? PATIENTS[nextAppointment.patientId]
+    : null;
+  const currentIssue = currentAppointment?.chief ?? "No chief complaint";
+  const waitingSince = currentAppointment?.time ?? "Unknown time";
+
+  const handleEnd = () => {
+    if (currentIndex + 1 < TODAYS_APPOINTMENTS.length) {
+      setCurrentIndex((i) => i + 1);
+      setStatus("completed");
+    } else {
+      // no more patients
+      setCurrentIndex((i) => i + 1);
+      setStatus("idle");
+    }
+  };
+
+  if (isQueueEmpty || (status === "idle" && !currentPatient)) {
+    return (
+      <div className="bg-white rounded-2xl border border-gray-200 p-4">
+        <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+          <User size={13} className="text-blue-500" /> Next Patient
+        </h3>
+        <div className="flex flex-col items-center justify-center py-6 gap-2">
+          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+            <User size={18} className="text-gray-300" />
+          </div>
+          <p className="text-xs text-gray-400 text-center">
+            No patients in queue
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "in_progress" && currentPatient) {
+    return (
+      <div className="bg-white rounded-2xl border border-gray-200 p-4">
+        <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+          <User size={13} className="text-blue-500" /> Next Patient
+        </h3>
+
+        {/* live badge */}
+        <div className="flex items-center gap-1.5 mb-3">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+          </span>
+          <span className="text-xs font-semibold text-green-600">
+            Consultation in progress
+          </span>
+        </div>
+
+        {/* current patient card */}
+        <div className="bg-green-50 border border-green-200 rounded-xl p-3 flex items-start gap-3">
+          <div className="w-9 h-9 rounded-full bg-green-200 flex items-center justify-center flex-shrink-0">
+            <User size={16} className="text-green-700" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-gray-800 truncate">
+              {currentPatient.name}
+            </p>
+            <p className="text-xs text-gray-500 truncate">{currentIssue}</p>
+            <p className="text-xs text-green-600 mt-0.5">
+              Age {currentPatient.age} · Seeing now
+            </p>
+          </div>
+        </div>
+
+        {/* end button */}
+        <Button onClick={handleEnd} className="w-full mt-6" variant="outline">
+          <Square size={12} fill="currentColor" /> End Consultation
+        </Button>
+
+        {/* next in line preview */}
+        {nextPatient && (
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <p className="text-xs text-gray-400 mb-1.5">Up next</p>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
+                <User size={11} className="text-gray-400" />
+              </div>
+              <p className="text-xs text-gray-500">{nextPatient.name}</p>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // COMPLETED: ready to start next consultation
+  if (status === "completed" && currentPatient) {
+    return (
+      <Card>
+        <CardHeader>
+          <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+            <User size={13} className="text-blue-500" /> Next Patient
+          </h3>
+
+          {/* ready badge */}
+          <div className="flex items-center gap-1.5 mb-3">
+            <span className="w-2 h-2 rounded-full bg-blue-400" />
+            <span className="text-xs font-semibold text-blue-600">
+              Ready to consult
+            </span>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* next patient card */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-start gap-3">
+            <div className="w-9 h-9 rounded-full bg-blue-200 flex items-center justify-center flex-shrink-0">
+              <User size={16} className="text-blue-700" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-gray-800 truncate">
+                {currentPatient.name}
+              </p>
+              <p className="text-xs text-gray-500 truncate">{currentIssue}</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Age {currentPatient.age} · Waiting since {waitingSince}
+              </p>
+            </div>
+          </div>
+
+          {/* remaining count */}
+          {TODAYS_APPOINTMENTS.length - currentIndex - 1 > 0 && (
+            <p className="text-xs text-gray-400 text-center mt-4">
+              {TODAYS_APPOINTMENTS.length - currentIndex - 1} more patient
+              {TODAYS_APPOINTMENTS.length - currentIndex - 1 > 1
+                ? "s"
+                : ""}{" "}
+              waiting
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return null;
+};
+
 const ActiveDoctorList = () => {
   return (
     <Card>
@@ -266,43 +304,6 @@ const ActiveDoctorList = () => {
             <div className="mt-3 text-xs text-ink-500">
               Next available: {doctor.nextAvailable}
             </div>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
-};
-
-const Notification = () => {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Notification</CardTitle>
-        <CardDescription>Slots filled, by department</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-2.5 mt-6">
-        {[
-          {
-            t: "Mohammad Hasan's stress test results pending",
-            u: true,
-          },
-          { t: "Abdul Karim's pulmonary function test due", u: true },
-          { t: "Weekly report submission by Friday", u: false },
-          { t: "Staff meeting at 5:00 PM today", u: false },
-          { t: "Abdul Karim's pulmonary function test due", u: false },
-        ].map((r, i) => (
-          <div
-            key={i}
-            className={`flex items-start gap-2 p-2.5 rounded-lg ${r.u ? "bg-amber-50 border border-amber-200" : "bg-gray-50 border border-gray-100"}`}
-          >
-            <span
-              className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${r.u ? "bg-amber-500" : "bg-gray-300"}`}
-            />
-            <p
-              className={`text-xs ${r.u ? "text-amber-700" : "text-gray-500"}`}
-            >
-              {r.t}
-            </p>
           </div>
         ))}
       </CardContent>

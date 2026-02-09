@@ -1,14 +1,9 @@
 import { Button } from "../ui/button";
 import { cn } from "../../lib/utils";
 import { NavLink } from "react-router-dom";
-import type { LucideIcon } from "lucide-react";
+import type { NavMenuItem } from "@/config/navigation";
 
-export type SidebarItem = {
-  label: string;
-  description?: string;
-  to: string;
-  icon?: LucideIcon;
-};
+export type SidebarItem = NavMenuItem;
 
 type SidebarProps = {
   items?: SidebarItem[];

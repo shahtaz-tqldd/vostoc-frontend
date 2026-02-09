@@ -95,7 +95,7 @@ export function DataTable<T>({
             <TableBody>
               {!totalItems && (
                 <TableRow>
-                  <TableCell colSpan={columns.length} className="py-12">
+                  <TableCell colSpan={columns.length} className="py-14">
                     <NoDataFound />
                   </TableCell>
                 </TableRow>

@@ -13,6 +13,11 @@ export type LoginResponse = {
 }
 
 export type MeResponse = {
+  id: string
+  username: string
+  email: string | null
+  phone: string | null
+  name: string
   role: string
 }
 

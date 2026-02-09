@@ -3,6 +3,7 @@ import { CURRENT_DOCTOR, STATUS_CFG, TODAYS_APPOINTMENTS } from "./mock_data";
 import { Bell, ChevronRight, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { PATIENTS } from "../consultation/mock_data";
+import { useAppSelector } from "@/app/hooks";
 
 const DoctorsAppointmentList = () => {
   const [selectedId] = useState(null);
@@ -23,20 +24,15 @@ const DoctorsAppointmentList = () => {
     navigate(`/consultation/${patiantId}`);
   };
 
+  const me = useAppSelector((state) => state.auth.me);
+  const doctorName = me?.name ?? CURRENT_DOCTOR.name;
+
   return (
     <>
       <div className="flex items-center gap-3">
-        <div
-          className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm flex-shrink-0"
-          style={{
-            background: "linear-gradient(135deg,#334155,#1e293b)",
-          }}
-        >
-          {CURRENT_DOCTOR.avatar}
-        </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-gray-800 truncate">
-            {CURRENT_DOCTOR.name}
+            {doctorName}
           </p>
           <p className="text-xs text-gray-400">{CURRENT_DOCTOR.specialty}</p>
         </div>

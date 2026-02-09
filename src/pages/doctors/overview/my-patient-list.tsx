@@ -90,6 +90,7 @@ const MyPatientList = () => {
           onChange: setSearch,
         },
       }}
+      totalItems={paginatedData?.length}
     />
   );
 };

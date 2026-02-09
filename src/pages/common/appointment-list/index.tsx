@@ -1,84 +1,155 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { DataTable, type ColumnDef } from "@/components/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  useDeleteAppointmentMutation,
+  useGetAppointmentsQuery,
+} from "@/features/appointment/appointmentApiSlice";
+import type { AppointmentDetails } from "@/features/appointment/type";
+import { Trash2 } from "lucide-react";
 
-type Appointment = {
+type AppointmentRow = {
   id: string;
   patient: string;
   doctor: string;
   time: string;
-  status: "Scheduled" | "Completed" | "Cancelled";
+  status: "Scheduled" | "Confirmed" | "Completed" | "Cancelled" | "Pending";
 };
 
-// --- 2. Create some mock data ---
-const mockAppointments: Appointment[] = Array.from({ length: 55 }, (_, i) => ({
-  id: `APT-${1000 + i}`,
-  patient: `Patient ${i + 1}`,
-  doctor: `Dr. ${String.fromCharCode(65 + (i % 5))}. Smith`,
-  time: `${9 + (i % 9)}:${(i % 6) * 10} AM`,
-  status: ["Scheduled", "Completed", "Cancelled"][
-    i % 3
-  ] as Appointment["status"],
-}));
+const formatTimeSlot = (item: AppointmentDetails) => {
+  if (item.appointmentTime) return item.appointmentTime;
+  if (!item.appointmentDate) return "N/A";
+  const dateValue = new Date(item.appointmentDate);
+  if (Number.isNaN(dateValue.getTime())) return "N/A";
+  return dateValue.toLocaleString([], {
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
-// --- 3. Define the columns for your table ---
-// This is where you configure how the table is rendered.
-const appointmentColumns: ColumnDef<Appointment>[] = [
-  {
-    header: "Appointment ID",
-    accessorKey: "id",
-  },
-  {
-    header: "Patient Name",
-    accessorKey: "patient",
-  },
-  {
-    header: "Assigned Doctor",
-    accessorKey: "doctor",
-  },
-  {
-    header: "Time Slot",
-    accessorKey: "time",
-  },
-  {
-    header: "Status",
-    accessorKey: "status",
-    // Use the `cell` property for custom rendering
-    cell: (row) => {
-      const status = row.status;
-      const variant = {
-        Scheduled: "mint",
-        Completed: "ink",
-        Cancelled: "coral",
-      }[status] as "mint" | "ink" | "coral";
-
-      return <Badge variant={variant}>{status}</Badge>;
-    },
-  },
-];
+const mapApiStatus = (status?: string): AppointmentRow["status"] => {
+  const normalized = status?.toLowerCase();
+  if (normalized === "completed") return "Completed";
+  if (normalized === "cancelled") return "Cancelled";
+  if (normalized === "confirmed") return "Confirmed";
+  if (normalized === "pending") return "Pending";
+  return "Scheduled";
+};
 
 export default function AppointmentListPage() {
-  // --- 4. Manage pagination state in the parent component ---
   const itemsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
 
-  const totalPages = Math.ceil(mockAppointments.length / itemsPerPage);
-  const paginatedData = mockAppointments.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
+  const {
+    data,
+    isLoading: isAppointmentLoading,
+    isFetching: isAppointmentFetching,
+    isError,
+  } = useGetAppointmentsQuery();
+  const [deleteAppointment, { isLoading: isDeletingAppointment }] =
+    useDeleteAppointmentMutation();
+
+  const rows = useMemo<AppointmentRow[]>(
+    () =>
+      (data?.data || []).map((item) => ({
+        id: item.id,
+        patient: item.patientName || "Unknown patient",
+        doctor: item.doctor?.name || "Unassigned",
+        time: formatTimeSlot(item),
+        status: mapApiStatus(item.status),
+      })),
+    [data],
   );
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / itemsPerPage));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedData = rows.slice(
+    (safeCurrentPage - 1) * itemsPerPage,
+    safeCurrentPage * itemsPerPage,
+  );
+
+  const handleDeleteAppointment = async (id: string) => {
+    try {
+      await deleteAppointment(id).unwrap();
+    } catch {
+      // Keep the UI stable; global error handling can show details.
+    }
+  };
+
+  const appointmentColumns: ColumnDef<AppointmentRow>[] = [
+    {
+      header: "Appointment ID",
+      accessorKey: "id",
+    },
+    {
+      header: "Patient Name",
+      accessorKey: "patient",
+    },
+    {
+      header: "Assigned Doctor",
+      accessorKey: "doctor",
+    },
+    {
+      header: "Time Slot",
+      accessorKey: "time",
+    },
+    {
+      header: "Status",
+      accessorKey: "status",
+      cell: (row) => {
+        const variant =
+          row.status === "Completed"
+            ? "ink"
+            : row.status === "Cancelled"
+              ? "coral"
+              : row.status === "Pending"
+                ? "coral"
+                : "mint";
+        return <Badge variant={variant}>{row.status}</Badge>;
+      },
+    },
+    {
+      header: "Action",
+      accessorKey: "id",
+      cell: (row) => (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => handleDeleteAppointment(row.id)}
+          disabled={isDeletingAppointment}
+          className="rounded-md px-2 text-red-600 hover:text-red-700"
+        >
+          <Trash2 size={14} />
+          Delete
+        </Button>
+      ),
+    },
+  ];
 
   return (
     <div className="container mx-auto">
-      <DataTable<Appointment>
+      <DataTable<AppointmentRow>
         title="Appointment Queue"
         description="Bookings grouped by assigned doctor and time slot."
         data={paginatedData}
         columns={appointmentColumns}
-        currentPage={currentPage}
+        currentPage={safeCurrentPage}
         totalPages={totalPages}
         setCurrentPage={setCurrentPage}
+        totalItems={rows.length}
       />
+      {(isAppointmentLoading || isAppointmentFetching) && (
+        <p className="mt-3 text-sm text-ink-500">Loading appointments...</p>
+      )}
+      {isError && (
+        <p className="mt-3 text-sm text-red-600">
+          Failed to load appointments. Please retry.
+        </p>
+      )}
     </div>
   );
 }

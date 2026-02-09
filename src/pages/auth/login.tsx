@@ -4,7 +4,7 @@ import { useLoginMutation, useLazyMeQuery } from "@/features/auth/authApi";
 import { setCookie } from "@/lib/cookie";
 import { useAppDispatch } from "@/app/hooks";
 import type { Role } from "@/features/auth/authSlice";
-import { setRole } from "@/features/auth/authSlice";
+import { setMe, setRole } from "@/features/auth/authSlice";
 import { Stethoscope } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -81,6 +81,7 @@ const LoginPage: React.FC = () => {
       if (normalizedRole) {
         dispatch(setRole(normalizedRole));
       }
+      dispatch(setMe(me));
 
       navigate("/", { replace: true });
     } catch (err: unknown) {

@@ -4,6 +4,7 @@ import { authApi } from '@/features/auth/authApi'
 import { doctorsApi } from '@/features/doctors/doctorsApi'
 import { departmentApi } from '@/features/department/departmentApi'
 import { receptionistApi } from '@/features/receptionist/receptionistApi'
+import { appointmentApi } from '@/features/appointment/appointmentApiSlice'
 
 export const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
     [doctorsApi.reducerPath]: doctorsApi.reducer,
     [departmentApi.reducerPath]: departmentApi.reducer,
     [receptionistApi.reducerPath]: receptionistApi.reducer,
+    [appointmentApi.reducerPath]: appointmentApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -19,6 +21,7 @@ export const store = configureStore({
       doctorsApi.middleware,
       departmentApi.middleware,
       receptionistApi.middleware,
+      appointmentApi.middleware,
     ),
 })
 

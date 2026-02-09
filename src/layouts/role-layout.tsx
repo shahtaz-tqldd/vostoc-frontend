@@ -1,53 +1,14 @@
 import { useEffect } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
-import type { SidebarItem } from "@/components/layout/Sidebar";
 import { CommonTopbar } from "@/components/layout/Topbar";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { useMeQuery } from "@/features/auth/authApi";
-import { clearAuth, setRole } from "@/features/auth/authSlice";
+import { clearAuth, setMe, setRole } from "@/features/auth/authSlice";
 import type { Role } from "@/features/auth/authSlice";
 import { deleteCookie, getCookie } from "@/lib/cookie";
 import { cn } from "@/lib/utils";
-import { ChartNoAxesGantt, Layers, Stethoscope, Users } from "lucide-react";
-
-const adminSidebar: SidebarItem[] = [
-  {
-    label: "Overview",
-    description: "Hospital performance",
-    to: "/",
-    icon: Layers,
-  },
-  {
-    label: "Doctors",
-    description: "Credentials and schedules",
-    to: "/doctors/list",
-    icon: Stethoscope,
-  },
-  {
-    label: "Appointments",
-    description: "Slots and assignments",
-    to: "/appointment-list",
-    icon: ChartNoAxesGantt,
-  },
-  {
-    label: "Receptionist",
-    description: "Capacity planning",
-    to: "/receptionist",
-    icon: Users,
-  },
-];
-
-const receptionistSidebar: SidebarItem[] = [
-  { label: "My day", description: "Appointments and tasks", to: "/" },
-  { label: "Patient list", description: "History and notes", to: "/patients" },
-  {
-    label: "Care plans",
-    description: "Review and follow up",
-    to: "/care-plans",
-  },
-  { label: "Messages", description: "Team updates", to: "/messages" },
-];
+import { getSidebarItemsByRole } from "@/config/navigation";
 
 function normalizeRole(value?: string): Role | null {
   if (!value) return null;
@@ -71,6 +32,9 @@ export function RoleLayout() {
     const normalized = normalizeRole(data?.role);
     if (normalized && normalized !== role) {
       dispatch(setRole(normalized));
+    }
+    if (data) {
+      dispatch(setMe(data));
     }
   }, [data, dispatch, role]);
 
@@ -100,8 +64,7 @@ export function RoleLayout() {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  const sidebarItems =
-    effectiveRole === "admin" ? adminSidebar : receptionistSidebar;
+  const sidebarItems = getSidebarItemsByRole(effectiveRole);
 
   const topbarTitle =
     effectiveRole === "admin" ? "Admin dashboard" : "Receptionist dashboard";
