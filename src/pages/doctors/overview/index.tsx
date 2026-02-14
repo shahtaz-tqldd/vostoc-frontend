@@ -19,6 +19,7 @@ import { Bell, Clock, Play, Square, User } from "lucide-react";
 // data
 import { PATIENTS } from "../consultation/mock_data";
 import { DAYS, DOCTOR_SCHEDULES, TODAYS_APPOINTMENTS } from "./mock_data";
+import AppointmentStats from "@/pages/common/components/appointment-status";
 
 type ConsultationStatus = "idle" | "in_progress" | "completed";
 
@@ -37,7 +38,7 @@ export default function OverviewPage() {
 
         <div className="p-4 md:p-8 grid grid-cols-3 gap-4">
           <div className="col-span-2 space-y-5">
-            <Stats />
+            <AppointmentStats />
             <SchedulePanel />
             <MyPatientList />
           </div>
@@ -51,46 +52,6 @@ export default function OverviewPage() {
     </div>
   );
 }
-
-const Stats = () => {
-  const completed = TODAYS_APPOINTMENTS.filter(
-    (a) => a.status === "completed",
-  ).length;
-  const waiting = TODAYS_APPOINTMENTS.filter(
-    (a) => a.status === "waiting" || a.status === "Follow-up",
-  ).length;
-
-  return (
-    <div className="grid grid-cols-3 gap-3">
-      {[
-        {
-          label: "Total Today",
-          value: TODAYS_APPOINTMENTS.length,
-          bg: "bg-blue-200",
-          sub: "scheduled",
-        },
-        {
-          label: "Waiting",
-          value: waiting,
-          bg: "bg-red-200",
-          sub: "in queue",
-        },
-        {
-          label: "Completed",
-          value: completed,
-          bg: "bg-green-200",
-          sub: "finished",
-        },
-      ].map((s) => (
-        <div key={s.label} className={cn("rounded-3xl p-6", s.bg)}>
-          <p className="text-xs font-bold opacity-70">{s.label}</p>
-          <p className="text-3xl font-bold mt-4 leading-none">{s.value}</p>
-          <p className="text-xs opacity-50 mt-2">{s.sub}</p>
-        </div>
-      ))}
-    </div>
-  );
-};
 
 const Notification = () => {
   return (

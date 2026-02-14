@@ -1,10 +1,21 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { DataTable, type ColumnDef } from "@/components/table";
 import { StatusBadge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useGetDoctorsQuery } from "@/features/doctors/doctorsApi";
 import { useAppSelector } from "@/app/hooks";
 import { selectDepartmentFilterOptions } from "@/features/department/departmentSlice";
+import type { DoctorSchedule } from "@/features/doctors/type";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { CalendarDays, Clock3, Eye, Pencil, Trash2 } from "lucide-react";
+import ThreeDotMenu from "@/components/layout/ThreeDotMenu";
 
 type Doctor = {
   id: string;
@@ -14,10 +25,62 @@ type Doctor = {
   contact: string;
   status: "Active" | "On Leave" | "Unavailable";
   imageUrl: string;
+  schedules: DoctorSchedule[];
+  scheduleDisplay: string;
+  actions: string;
 };
 
-// Define the columns for the doctor table
-const doctorColumns: ColumnDef<Doctor>[] = [
+const dayLabel: Record<string, string> = {
+  SUN: "Sunday",
+  MON: "Monday",
+  TUE: "Tuesday",
+  WED: "Wednesday",
+  THU: "Thursday",
+  FRI: "Friday",
+  SAT: "Saturday",
+};
+
+const formatDay = (day: string) => dayLabel[day] ?? day;
+
+const DoctorScheduleMenu = ({ schedules }: { schedules: DoctorSchedule[] }) => {
+  if (schedules.length === 0) {
+    return <span className="text-sm text-muted-foreground">No schedule</span>;
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" className="h-8 px-2.5">
+          <CalendarDays size={14} className="mr-1.5" />
+          Schedules ({schedules.length})
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64">
+        <DropdownMenuLabel>Doctor schedule</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <div className="space-y-1 p-1">
+          {schedules.map((slot) => (
+            <div
+              key={slot.id}
+              className="rounded-md border border-slate-200 bg-slate-50 p-2"
+            >
+              <p className="text-xs font-semibold text-slate-700">
+                {formatDay(slot.day)}
+              </p>
+              <p className="mt-1 flex items-center gap-1 text-xs text-slate-600">
+                <Clock3 size={12} />
+                {slot.startTime} - {slot.endTime}
+              </p>
+            </div>
+          ))}
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
+const getDoctorColumns = (isAdmin: boolean): ColumnDef<Doctor>[] => {
+  const baseColumns: ColumnDef<Doctor>[] = [
   {
     header: "Doctor",
     accessorKey: "name",
@@ -63,7 +126,53 @@ const doctorColumns: ColumnDef<Doctor>[] = [
       return <StatusBadge status={variant} label={row.status} />;
     },
   },
-];
+  {
+    header: "Schedule",
+    accessorKey: "scheduleDisplay",
+    cell: (row) => <DoctorScheduleMenu schedules={row.schedules} />,
+  },
+  ];
+
+  if (!isAdmin) {
+    return baseColumns;
+  }
+
+  return [
+    ...baseColumns,
+    {
+      header: "",
+      accessorKey: "actions",
+      cell: (row) => (
+        <ThreeDotMenu
+          items={[
+            {
+              label: "View",
+              icon: Eye,
+              onClick: () => {
+                console.log("View doctor", row.id);
+              },
+            },
+            {
+              label: "Update",
+              icon: Pencil,
+              onClick: () => {
+                console.log("Update doctor", row.id);
+              },
+            },
+            {
+              label: "Delete",
+              icon: Trash2,
+              destructive: true,
+              onClick: () => {
+                console.log("Delete doctor", row.id);
+              },
+            },
+          ]}
+        />
+      ),
+    },
+  ];
+};
 
 export default function DoctorListPage() {
   // Manage pagination state in the parent component
@@ -72,6 +181,7 @@ export default function DoctorListPage() {
   const [search, setSearch] = useState("");
   const [department, setDepartment] = useState("");
   const [status, setStatus] = useState("");
+  const role = useAppSelector((state) => state.auth.role);
 
   const { data: doctorsData } = useGetDoctorsQuery();
 
@@ -88,14 +198,30 @@ export default function DoctorListPage() {
       contact: doctor.contactNumber ?? "—",
       status: "Active",
       imageUrl: doctor.profileImageUrl ?? "",
+      schedules: doctor.schedules ?? [],
+      scheduleDisplay: `${doctor.schedules?.length ?? 0} schedules`,
+      actions: "actions",
     }));
   }, [doctorsData]);
 
+  const doctorColumns = useMemo(() => getDoctorColumns(role === "admin"), [role]);
+
   const departmentOptions = useAppSelector(selectDepartmentFilterOptions);
 
-  useEffect(() => {
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
     setCurrentPage(1);
-  }, [search, department, status]);
+  };
+
+  const handleDepartmentChange = (value: string) => {
+    setDepartment(value);
+    setCurrentPage(1);
+  };
+
+  const handleStatusChange = (value: string) => {
+    setStatus(value);
+    setCurrentPage(1);
+  };
 
   const filteredDoctors = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -140,7 +266,7 @@ export default function DoctorListPage() {
         search: {
           value: search,
           placeholder: "Search doctors...",
-          onChange: setSearch,
+          onChange: handleSearchChange,
         },
         selects: [
           {
@@ -148,7 +274,7 @@ export default function DoctorListPage() {
             value: department,
             placeholder: "Department",
             options: departmentOptions,
-            onChange: setDepartment,
+            onChange: handleDepartmentChange,
             widthClassName: "!min-w-[120px] max-w-fit",
           },
           {
@@ -160,7 +286,7 @@ export default function DoctorListPage() {
               { label: "On Leave", value: "On Leave" },
               { label: "Unavailable", value: "Unavailable" },
             ],
-            onChange: setStatus,
+            onChange: handleStatusChange,
             widthClassName: "min-w-[120px] max-w-fit",
           },
         ],

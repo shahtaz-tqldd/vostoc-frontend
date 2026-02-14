@@ -42,6 +42,10 @@ export const routes = createBrowserRouter([
         element: <ReceptionistListPage />,
       },
       {
+        path: "/doctors-list",
+        element: <DoctorListPage />,
+      },
+      {
         path: "/consultation/:patientId",
         element: <ConsultationPage />,
       },

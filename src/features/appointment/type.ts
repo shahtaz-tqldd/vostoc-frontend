@@ -43,3 +43,25 @@ export type AppointmentPatientLookup = {
   departmentId?: string
   doctorId?: string
 }
+
+export type AppointmentQueueItem = {
+  nextPatient?: {
+    name?: string
+    age?: number
+    gender?: string
+    contact?: string
+  }
+  department?: {
+    id?: string
+    name?: string
+  }
+  doctor?: {
+    id?: string
+    name?: string
+    specialty?: {
+      id?: string
+      name?: string
+    }
+  }
+  leftForDoctor?: number
+}

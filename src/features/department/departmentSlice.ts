@@ -41,7 +41,7 @@ export const selectDepartmentOptionsWithSpecialties = createSelector(
       value: department.id,
       specialties: department.specialties?.map((item) => ({
         label: item.name,
-        value: item.id,
+        value: item.name,
       })),
     })),
 );

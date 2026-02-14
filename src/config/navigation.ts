@@ -57,6 +57,12 @@ export const receptionistSidebarItems: NavMenuItem[] = [
     icon: ChartNoAxesGantt,
   },
   {
+    label: "Doctors",
+    description: "History and notes",
+    to: "/doctors-list",
+    icon: Stethoscope,
+  },
+  {
     label: "Messages",
     description: "Team updates",
     to: "/messages",

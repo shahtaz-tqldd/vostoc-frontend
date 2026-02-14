@@ -5,6 +5,7 @@ import type {
   Appointment,
   AppointmentDetails,
   AppointmentPatientLookup,
+  AppointmentQueueItem,
 } from './type'
 import type { ApiResponse } from '../base-type'
 
@@ -74,6 +75,19 @@ export const appointmentApi = createApi({
         `/appointments/patients?contactNumber=${encodeURIComponent(contactNumber)}`,
     }),
 
+    getStats: builder.query({
+      query: () =>
+        `/appointments/stats/today`,
+    }),
+
+    getAppointmentQueue: builder.query<
+      AppointmentQueueItem[] | ApiResponse<AppointmentQueueItem[]>,
+      void
+    >({
+      query: () =>
+        `/appointments/queue/next`,
+    }),
+
     createAppointment: builder.mutation<Appointment, CreateAppointmentPayload>({
       query: (body) => ({
         url: '/appointments',
@@ -98,4 +112,6 @@ export const {
   useGetAppointmentsQuery,
   useLazyGetPatientByContactNumberQuery,
   useDeleteAppointmentMutation,
+  useGetStatsQuery,
+  useGetAppointmentQueueQuery
 } = appointmentApi

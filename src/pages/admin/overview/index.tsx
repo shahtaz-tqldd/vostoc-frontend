@@ -5,32 +5,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { adminAppointments, doctorLoads } from "@/data/mock";
-import { TODAYS_APPOINTMENTS } from "@/pages/doctors/overview/mock_data";
+import { doctorLoads } from "@/data/mock";
 import { cn } from "@/lib/utils";
-
-const statusTone: Record<string, "mint" | "coral" | "ink"> = {
-  Confirmed: "mint",
-  Pending: "coral",
-  Completed: "ink",
-};
+import AppointmentStats from "@/pages/common/components/appointment-status";
+import TodaysAppointmentList from "@/pages/common/components/todays-appointment";
 
 export default function AdminOverviewPage() {
   return (
     <div className="grid grid-cols-3 gap-5">
       <div className="col-span-2 space-y-4">
-        <Stats />
-        <AppointmentList />
+        <AppointmentStats />
+        <TodaysAppointmentList />
         <DepartmentPerformance />
       </div>
       <div className="col-span-1 space-y-4">
@@ -41,49 +29,6 @@ export default function AdminOverviewPage() {
     </div>
   );
 }
-
-const AppointmentList = () => {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Appointment queue</CardTitle>
-        <CardDescription>
-          Bookings grouped by assigned doctor and time slot.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="mt-6">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Appointment</TableHead>
-              <TableHead>Patient</TableHead>
-              <TableHead>Doctor</TableHead>
-              <TableHead>Slot</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {adminAppointments.map((appointment) => (
-              <TableRow key={appointment.id}>
-                <TableCell className="font-semibold text-ink-900">
-                  {appointment.id}
-                </TableCell>
-                <TableCell>{appointment.patient}</TableCell>
-                <TableCell>{appointment.doctor}</TableCell>
-                <TableCell>{appointment.time}</TableCell>
-                <TableCell>
-                  <Badge variant={statusTone[appointment.status]}>
-                    {appointment.status}
-                  </Badge>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  );
-};
 
 const DepartmentPerformance = () => {
   const departments = [
@@ -198,46 +143,6 @@ const QuickAction = () => {
         </Button>
       </CardContent>
     </Card>
-  );
-};
-
-const Stats = () => {
-  const completed = TODAYS_APPOINTMENTS.filter(
-    (a) => a.status === "completed",
-  ).length;
-  const waiting = TODAYS_APPOINTMENTS.filter(
-    (a) => a.status === "waiting" || a.status === "Follow-up",
-  ).length;
-
-  return (
-    <div className="grid grid-cols-3 gap-3">
-      {[
-        {
-          label: "Total Today",
-          value: TODAYS_APPOINTMENTS.length,
-          bg: "bg-blue-200",
-          sub: "scheduled",
-        },
-        {
-          label: "Waiting",
-          value: waiting,
-          bg: "bg-red-200",
-          sub: "in queue",
-        },
-        {
-          label: "Completed",
-          value: completed,
-          bg: "bg-green-200",
-          sub: "finished",
-        },
-      ].map((s) => (
-        <div key={s.label} className={cn("rounded-3xl p-6", s.bg)}>
-          <p className="text-xs font-bold opacity-70">{s.label}</p>
-          <p className="text-3xl font-bold mt-4 leading-none">{s.value}</p>
-          <p className="text-xs opacity-50 mt-2">{s.sub}</p>
-        </div>
-      ))}
-    </div>
   );
 };
 
