@@ -57,7 +57,15 @@ export const receptionistApi = createApi({
         formData.append('name', payload.name)
         formData.append('username', payload.username)
         formData.append('password', payload.password)
-        formData.append('department_id', payload.department_id)
+        const departmentIds =
+          payload.department_ids && payload.department_ids.length > 0
+            ? payload.department_ids
+            : payload.department_id
+              ? [payload.department_id]
+              : []
+        departmentIds.forEach((departmentId) => {
+          formData.append('department_ids[]', departmentId)
+        })
         formData.append('contact_number', payload.contact_number)
         formData.append('shift', payload.shift)
         if (payload.description) {

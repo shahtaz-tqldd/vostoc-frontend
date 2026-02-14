@@ -3,7 +3,8 @@ import { DataTable, type ColumnDef } from "@/components/table";
 import { StatusBadge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useGetDoctorsQuery } from "@/features/doctors/doctorsApi";
-import { useGetDepartmentsQuery } from "@/features/department/departmentApi";
+import { useAppSelector } from "@/app/hooks";
+import { selectDepartmentFilterOptions } from "@/features/department/departmentSlice";
 
 type Doctor = {
   id: string;
@@ -73,7 +74,6 @@ export default function DoctorListPage() {
   const [status, setStatus] = useState("");
 
   const { data: doctorsData } = useGetDoctorsQuery();
-  const { data: departmentsData } = useGetDepartmentsQuery();
 
   const doctors = useMemo<Doctor[]>(() => {
     if (!doctorsData) {
@@ -91,14 +91,7 @@ export default function DoctorListPage() {
     }));
   }, [doctorsData]);
 
-  const departmentOptions = useMemo(
-    () =>
-      (departmentsData ?? []).map((dept) => ({
-        label: dept.name,
-        value: dept.name,
-      })),
-    [departmentsData],
-  );
+  const departmentOptions = useAppSelector(selectDepartmentFilterOptions);
 
   useEffect(() => {
     setCurrentPage(1);

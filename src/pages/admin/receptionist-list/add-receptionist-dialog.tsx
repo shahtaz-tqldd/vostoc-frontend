@@ -8,16 +8,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { UploadCloud, UserRound } from "lucide-react";
+import { ChevronDown, UploadCloud, UserRound } from "lucide-react";
 import type { ReceptionistShift } from "@/features/receptionist/type";
 import { useCreateReceptionistMutation } from "@/features/receptionist/receptionistApi";
 
@@ -36,7 +38,7 @@ export type AddReceptionistPayload = {
   username: string;
   password: string;
   imageFile?: File;
-  department: string;
+  departments: string[];
   contactNumber: string;
   shift: ReceptionistShift;
   description?: string;
@@ -66,7 +68,7 @@ export default function AddReceptionistDialog({
   const [password, setPassword] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
-  const [department, setDepartment] = useState("");
+  const [departmentIds, setDepartmentIds] = useState<string[]>([]);
   const [contactNumber, setContactNumber] = useState("");
   const [shift, setShift] = useState<ShiftOption["value"]>("Morning");
   const [description, setDescription] = useState("");
@@ -88,11 +90,11 @@ export default function AddReceptionistDialog({
       name.trim() &&
       username.trim() &&
       password.trim() &&
-      department &&
+      departmentIds.length > 0 &&
       contactNumber.trim() &&
       shift
     );
-  }, [contactNumber, department, name, password, shift, username]);
+  }, [contactNumber, departmentIds, name, password, shift, username]);
 
   const handleSetFile = (file?: File | null) => {
     if (!file || !file.type.startsWith("image/")) return;
@@ -105,10 +107,43 @@ export default function AddReceptionistDialog({
     setPassword("");
     setImageFile(null);
     setImagePreview("");
-    setDepartment("");
+    setDepartmentIds([]);
     setContactNumber("");
     setShift("Morning");
     setDescription("");
+  };
+
+  const selectedDepartmentOptions = useMemo(
+    () =>
+      departmentOptions.filter((option) =>
+        departmentIds.includes(option.value),
+      ),
+    [departmentIds, departmentOptions],
+  );
+
+  const isAllDepartmentsSelected =
+    departmentOptions.length > 0 &&
+    selectedDepartmentOptions.length === departmentOptions.length;
+
+  const departmentTriggerLabel = useMemo(() => {
+    if (isAllDepartmentsSelected) {
+      return "All departments";
+    }
+    if (selectedDepartmentOptions.length === 1) {
+      return selectedDepartmentOptions[0].label;
+    }
+    if (selectedDepartmentOptions.length > 1) {
+      return `${selectedDepartmentOptions.length} departments selected`;
+    }
+    return "Select department";
+  }, [isAllDepartmentsSelected, selectedDepartmentOptions]);
+
+  const toggleDepartment = (departmentId: string) => {
+    setDepartmentIds((prev) =>
+      prev.includes(departmentId)
+        ? prev.filter((id) => id !== departmentId)
+        : [...prev, departmentId],
+    );
   };
 
   const [createReceptionist, { isLoading }] = useCreateReceptionistMutation();
@@ -116,20 +151,16 @@ export default function AddReceptionistDialog({
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!isValid) return;
-    const res = await createReceptionist({
+    await createReceptionist({
       name: name.trim(),
       username: username.trim(),
       password: password.trim(),
       image: imageFile ?? undefined,
-      department_id: department,
+      department_ids: departmentIds,
       contact_number: contactNumber.trim(),
       shift,
       description: description.trim() || undefined,
     }).unwrap();
-
-    if (res?.success) {
-      console.log("Success");
-    }
 
     resetForm();
     onOpenChange(false);
@@ -194,38 +225,95 @@ export default function AddReceptionistDialog({
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-medium">Department</label>
-              <Select value={department} onValueChange={setDepartment}>
-                <SelectTrigger className="h-10" disabled={isLoading}>
-                  <SelectValue placeholder="Select department" />
-                </SelectTrigger>
-                <SelectContent>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isLoading}
+                    className="h-10 w-full justify-between rounded-xl bg-white px-3 font-normal"
+                  >
+                    <span className="truncate">{departmentTriggerLabel}</span>
+                    <ChevronDown className="h-4 w-4 opacity-60" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  className="w-[var(--radix-dropdown-menu-trigger-width)]"
+                >
+                  <DropdownMenuItem
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      if (isAllDepartmentsSelected) {
+                        setDepartmentIds([]);
+                        return;
+                      }
+                      setDepartmentIds(
+                        departmentOptions.map((option) => option.value),
+                      );
+                    }}
+                  >
+                    {isAllDepartmentsSelected ? "Clear all" : "Select all"}
+                  </DropdownMenuItem>
                   {departmentOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
+                    <DropdownMenuCheckboxItem
+                      key={option.value}
+                      checked={departmentIds.includes(option.value)}
+                      onSelect={(e) => e.preventDefault()}
+                      onCheckedChange={() => toggleDepartment(option.value)}
+                    >
                       {option.label}
-                    </SelectItem>
+                    </DropdownMenuCheckboxItem>
                   ))}
-                </SelectContent>
-              </Select>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Shift</label>
-              <Select
-                value={shift}
-                onValueChange={(v) => setShift(v as ShiftOption["value"])}
-              >
-                <SelectTrigger className="h-10" disabled={isLoading}>
-                  <SelectValue placeholder="Select shift" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SHIFT_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isLoading}
+                    className="h-10 w-full justify-between rounded-xl bg-white px-3 font-normal"
+                  >
+                    <span>{shift}</span>
+                    <ChevronDown className="h-4 w-4 opacity-60" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  className="w-[var(--radix-dropdown-menu-trigger-width)]"
+                >
+                  <DropdownMenuRadioGroup
+                    value={shift}
+                    onValueChange={(value) =>
+                      setShift(value as ShiftOption["value"])
+                    }
+                  >
+                    {SHIFT_OPTIONS.map((opt) => (
+                      <DropdownMenuRadioItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
+            <p className="col-span-2 text-xs text-muted-foreground">
+              {selectedDepartmentOptions.length > 0 ? (
+                <>
+                  Assigned:{" "}
+                  {selectedDepartmentOptions
+                    .map((option) => option.label)
+                    .join(", ")}
+                </>
+              ) : (
+                "Assigned: none"
+              )}
+            </p>
           </div>
 
           <div className="space-y-2">

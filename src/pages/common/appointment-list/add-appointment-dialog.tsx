@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,33 +9,39 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { CalendarDays, UserRound, Phone, Stethoscope } from "lucide-react";
+import {
+  CalendarDays,
+  CalendarIcon,
+  ChevronDown,
+  UserRound,
+  Phone,
+  Stethoscope,
+} from "lucide-react";
 import { useGetDoctorsQuery } from "@/features/doctors/doctorsApi";
 import {
   useCreateAppointmentMutation,
   useLazyGetPatientByContactNumberQuery,
 } from "@/features/appointment/appointmentApiSlice";
+import type { AppointmentPatientLookup } from "@/features/appointment/type";
 
 type SelectOption = {
   label: string;
   value: string;
-};
-
-export type DoctorOption = {
-  id: string;
-  name: string;
-  department: string;
-  specialty?: string;
-  contact?: string;
-  status?: "Active" | "On Leave" | "Unavailable";
 };
 
 export type AppointmentBookingPayload = {
@@ -57,6 +63,57 @@ type AppointmentBookingDialogProps = {
   onOpenChange: (open: boolean) => void;
   departmentOptions: SelectOption[];
 };
+
+const DAY_CODES = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] as const;
+const MINUTES_STEP = 15;
+
+function dayCodeFromDate(date: Date) {
+  return DAY_CODES[date.getDay()];
+}
+
+function parseDateValue(value?: string) {
+  if (!value) return undefined;
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+function formatDateValue(date: Date) {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatDateLabel(date?: Date) {
+  if (!date) return "Select date";
+  return date.toLocaleDateString("en-US", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function minutesFromTime(value: string) {
+  const [h, m] = value.split(":").map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return null;
+  return h * 60 + m;
+}
+
+function timeFromMinutes(minutes: number) {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${`${hours}`.padStart(2, "0")}:${`${mins}`.padStart(2, "0")}`;
+}
+
+function formatTimeLabel(value: string) {
+  const minutes = minutesFromTime(value);
+  if (minutes === null) return value;
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  const suffix = hours >= 12 ? "PM" : "AM";
+  const normalizedHour = hours % 12 || 12;
+  return `${normalizedHour}:${`${mins}`.padStart(2, "0")} ${suffix}`;
+}
 
 export default function AppointmentBookingDialog({
   open,
@@ -82,15 +139,14 @@ export default function AppointmentBookingDialog({
   // Schedule
   const [appointmentDate, setAppointmentDate] = useState("");
   const [appointmentTime, setAppointmentTime] = useState("");
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const { data: doctors } = useGetDoctorsQuery();
   const [triggerPatientLookup] = useLazyGetPatientByContactNumberQuery();
 
   const filteredDoctors = useMemo(() => {
     if (!department) return [];
-    return doctors?.data
-      .filter((d) => d.departmentId === department)
-      .filter((d) => (d.status ? d.status === "Active" : true));
+    return (doctors?.data ?? []).filter((d) => d.departmentId === department);
   }, [department, doctors]);
 
   const selectedDoctorId = useMemo(() => {
@@ -98,6 +154,119 @@ export default function AppointmentBookingDialog({
     const stillExists = filteredDoctors.some((d) => d.id === doctorId);
     return stillExists ? doctorId : "";
   }, [filteredDoctors, doctorId]);
+
+  const selectedDoctor = useMemo(
+    () => filteredDoctors.find((doc) => doc.id === selectedDoctorId),
+    [filteredDoctors, selectedDoctorId],
+  );
+
+  const scheduleByDay = useMemo(() => {
+    const mapped = new Map<string, Array<{ startTime: string; endTime: string }>>();
+    (selectedDoctor?.schedules ?? []).forEach((entry) => {
+      const dayCode = entry.day.toUpperCase();
+      const current = mapped.get(dayCode) ?? [];
+      current.push({ startTime: entry.startTime, endTime: entry.endTime });
+      mapped.set(dayCode, current);
+    });
+    return mapped;
+  }, [selectedDoctor]);
+
+  const availableDayCodes = useMemo(
+    () => new Set(scheduleByDay.keys()),
+    [scheduleByDay],
+  );
+
+  const selectedDateObject = useMemo(
+    () => parseDateValue(appointmentDate),
+    [appointmentDate],
+  );
+
+  const selectedDayCode = useMemo(() => {
+    if (!selectedDateObject) return "";
+    return dayCodeFromDate(selectedDateObject);
+  }, [selectedDateObject]);
+
+  const availableTimeOptions = useMemo(() => {
+    if (!selectedDayCode) return [];
+
+    const slots = scheduleByDay.get(selectedDayCode) ?? [];
+    const values = new Set<string>();
+
+    slots.forEach((slot) => {
+      const start = minutesFromTime(slot.startTime);
+      const end = minutesFromTime(slot.endTime);
+      if (start === null || end === null || end <= start) return;
+
+      for (let cursor = start; cursor < end; cursor += MINUTES_STEP) {
+        values.add(timeFromMinutes(cursor));
+      }
+    });
+
+    return [...values].sort((a, b) => a.localeCompare(b));
+  }, [scheduleByDay, selectedDayCode]);
+
+  const isDateDisabled = useCallback(
+    (date: Date) => {
+      if (!selectedDoctorId || availableDayCodes.size === 0) return true;
+      const today = new Date();
+      const currentDate = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+      );
+      const todayDate = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+      );
+      if (currentDate < todayDate) return true;
+      return !availableDayCodes.has(dayCodeFromDate(date));
+    },
+    [selectedDoctorId, availableDayCodes],
+  );
+
+  const scheduleDaysLabel = useMemo(() => {
+    if (!selectedDoctor) return "Select doctor to view available days.";
+    if (!availableDayCodes.size) return "No weekly schedule found for this doctor.";
+
+    const labels = DAY_CODES.filter((day) => availableDayCodes.has(day)).map(
+      (day) =>
+        ({
+          SUN: "Sun",
+          MON: "Mon",
+          TUE: "Tue",
+          WED: "Wed",
+          THU: "Thu",
+          FRI: "Fri",
+          SAT: "Sat",
+        })[day],
+    );
+    return `Available days: ${labels.join(", ")}`;
+  }, [selectedDoctor, availableDayCodes]);
+
+  const selectedGenderLabel = patientGender || "Select gender";
+
+  const selectedDepartmentLabel = useMemo(() => {
+    return (
+      departmentOptions.find((option) => option.value === department)?.label ??
+      "Select department"
+    );
+  }, [department, departmentOptions]);
+
+  const selectedDoctorLabel = useMemo(() => {
+    if (!department) return "Select department first";
+    if (!selectedDoctor) return "Select doctor";
+
+    return `${selectedDoctor.name}${selectedDoctor.specialty ? ` • ${selectedDoctor.specialty.name}` : ""}`;
+  }, [department, selectedDoctor]);
+
+  const selectedTimeLabel = useMemo(() => {
+    if (!appointmentDate) return "Select date first";
+    if (!availableTimeOptions.length) return "No time available";
+    return availableTimeOptions.includes(appointmentTime)
+      ? formatTimeLabel(appointmentTime)
+      : "Select time";
+  }, [appointmentDate, appointmentTime, availableTimeOptions]);
 
   const patientPhoneDigits = useMemo(
     () => patientPhone.replace(/\D/g, ""),
@@ -119,7 +288,9 @@ export default function AppointmentBookingDialog({
         const data = await triggerPatientLookup(patientPhone.trim()).unwrap();
         if (!data) return;
 
-        const resolvedPatient = "data" in data && data.data ? data.data : data;
+        const resolvedPatient = (
+          "data" in data && data.data ? data.data : data
+        ) as AppointmentPatientLookup;
 
         if (resolvedPatient.patientName) {
           setPatientName(resolvedPatient.patientName);
@@ -142,6 +313,16 @@ export default function AppointmentBookingDialog({
     return () => window.clearTimeout(timer);
   }, [patientLocalDigits, patientPhone, triggerPatientLookup]);
 
+  const isSelectedDateValid = useMemo(() => {
+    if (!selectedDateObject) return false;
+    return !isDateDisabled(selectedDateObject);
+  }, [selectedDateObject, isDateDisabled]);
+
+  const isSelectedTimeValid = useMemo(
+    () => availableTimeOptions.includes(appointmentTime),
+    [availableTimeOptions, appointmentTime],
+  );
+
   const isValid = useMemo(() => {
     const phoneOk = patientLocalDigits.length >= 7;
     return (
@@ -150,7 +331,9 @@ export default function AppointmentBookingDialog({
       department &&
       selectedDoctorId &&
       appointmentDate &&
-      appointmentTime
+      isSelectedDateValid &&
+      appointmentTime &&
+      isSelectedTimeValid
     );
   }, [
     patientName,
@@ -159,6 +342,8 @@ export default function AppointmentBookingDialog({
     selectedDoctorId,
     appointmentDate,
     appointmentTime,
+    isSelectedDateValid,
+    isSelectedTimeValid,
   ]);
 
   const resetForm = () => {
@@ -172,8 +357,6 @@ export default function AppointmentBookingDialog({
     setAppointmentDate("");
     setAppointmentTime("");
   };
-
-  const isLoading = false;
 
   const handlePatientPhoneChange = (value: string) => {
     if (!value) {
@@ -191,28 +374,25 @@ export default function AppointmentBookingDialog({
 
   const [createAppointment, { isLoading: appointmentCreateLoading }] =
     useCreateAppointmentMutation();
+  const isLoading = appointmentCreateLoading;
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!isValid) return;
 
-    const res = createAppointment({
+    await createAppointment({
       patientName: patientName.trim(),
       patientPhone: patientPhone.trim(),
       patientAge: patientAge.trim() ? Number(patientAge) : undefined,
       patientGender: patientGender || undefined,
       patientNotes: patientNotes.trim() || undefined,
       department,
-      doctorId,
+      doctorId: selectedDoctorId,
       appointmentDate,
       appointmentTime,
     }).unwrap();
-
-    if (res?.success) {
-      console.log("Success!");
-      resetForm();
-      onOpenChange(false);
-    }
+    resetForm();
+    onOpenChange(false);
   };
 
   return (
@@ -276,22 +456,47 @@ export default function AppointmentBookingDialog({
                   <label className="text-sm font-medium">
                     Gender (optional)
                   </label>
-                  <Select
-                    value={patientGender}
-                    onValueChange={(v) =>
-                      setPatientGender(v as "Male" | "Female" | "Other")
-                    }
-                    disabled={isLoading}
-                  >
-                    <SelectTrigger className="h-10">
-                      <SelectValue placeholder="Select gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Male">Male</SelectItem>
-                      <SelectItem value="Female">Female</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={isLoading}
+                        className="h-10 w-full justify-between rounded-xl bg-white px-3 font-normal"
+                      >
+                        <span className="truncate">{selectedGenderLabel}</span>
+                        <ChevronDown className="h-4 w-4 opacity-60" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="start"
+                      className="w-[var(--radix-dropdown-menu-trigger-width)]"
+                    >
+                      <DropdownMenuRadioGroup
+                        value={patientGender || "__none"}
+                        onValueChange={(value) =>
+                          setPatientGender(
+                            value === "__none"
+                              ? ""
+                              : (value as "Male" | "Female" | "Other"),
+                          )
+                        }
+                      >
+                        <DropdownMenuRadioItem value="__none">
+                          Unselect
+                        </DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="Male">
+                          Male
+                        </DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="Female">
+                          Female
+                        </DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="Other">
+                          Other
+                        </DropdownMenuRadioItem>
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </div>
@@ -306,51 +511,101 @@ export default function AppointmentBookingDialog({
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Department</label>
-                  <Select value={department} onValueChange={setDepartment}>
-                    <SelectTrigger className="h-10" disabled={isLoading}>
-                      <SelectValue placeholder="Select department" />
-                    </SelectTrigger>
-                    <SelectContent>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={isLoading}
+                        className="h-10 w-full justify-between rounded-xl bg-white px-3 font-normal"
+                      >
+                        <span className="truncate">{selectedDepartmentLabel}</span>
+                        <ChevronDown className="h-4 w-4 opacity-60" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="start"
+                      className="w-[var(--radix-dropdown-menu-trigger-width)]"
+                    >
+                      <DropdownMenuRadioGroup
+                        value={department || "__none"}
+                        onValueChange={(value) => {
+                          if (value === "__none") {
+                            setDepartment("");
+                            setDoctorId("");
+                            setAppointmentDate("");
+                            setAppointmentTime("");
+                            return;
+                          }
+                          setDepartment(value);
+                          if (value !== department) {
+                            setDoctorId("");
+                            setAppointmentDate("");
+                            setAppointmentTime("");
+                          }
+                        }}
+                      >
+                        <DropdownMenuRadioItem value="__none">
+                          Unselect
+                        </DropdownMenuRadioItem>
                       {departmentOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
+                        <DropdownMenuRadioItem
+                          key={option.value}
+                          value={option.value}
+                        >
                           {option.label}
-                        </SelectItem>
+                        </DropdownMenuRadioItem>
                       ))}
-                    </SelectContent>
-                  </Select>
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Doctor</label>
-                  <Select
-                    value={selectedDoctorId}
-                    onValueChange={setDoctorId}
-                    disabled={!department || isLoading}
-                  >
-                    <SelectTrigger className="h-10">
-                      <SelectValue
-                        placeholder={
-                          department
-                            ? "Select doctor"
-                            : "Select department first"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filteredDoctors.length === 0 ? (
-                        <SelectItem value="__none" disabled>
-                          No active doctors found
-                        </SelectItem>
-                      ) : (
-                        filteredDoctors.map((doc) => (
-                          <SelectItem key={doc.id} value={doc.id}>
-                            {doc.name}
-                            {doc.specialty ? ` • ${doc.specialty.name}` : ""}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={!department || isLoading}
+                        className="h-10 w-full justify-between rounded-xl bg-white px-3 font-normal"
+                      >
+                        <span className="truncate">{selectedDoctorLabel}</span>
+                        <ChevronDown className="h-4 w-4 opacity-60" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="start"
+                      className="w-[var(--radix-dropdown-menu-trigger-width)]"
+                    >
+                      <DropdownMenuRadioGroup
+                        value={selectedDoctorId || "__none"}
+                        onValueChange={(value) => {
+                          const nextDoctorId = value === "__none" ? "" : value;
+                          setDoctorId(nextDoctorId);
+                          setAppointmentDate("");
+                          setAppointmentTime("");
+                        }}
+                      >
+                        <DropdownMenuRadioItem value="__none">
+                          Unselect
+                        </DropdownMenuRadioItem>
+                        {filteredDoctors.length === 0 ? (
+                          <DropdownMenuItem disabled>
+                            No active doctors found
+                          </DropdownMenuItem>
+                        ) : (
+                          filteredDoctors.map((doc) => (
+                            <DropdownMenuRadioItem key={doc.id} value={doc.id}>
+                              {doc.name}
+                              {doc.specialty ? ` • ${doc.specialty.name}` : ""}
+                            </DropdownMenuRadioItem>
+                          ))
+                        )}
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
               <div className="space-y-2 mt-3">
@@ -375,24 +630,91 @@ export default function AppointmentBookingDialog({
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Date</label>
-                  <Input
-                    type="date"
-                    value={appointmentDate}
-                    onChange={(e) => setAppointmentDate(e.target.value)}
-                    disabled={isLoading}
-                  />
+                  <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={!selectedDoctorId || isLoading}
+                        className="h-10 w-full justify-between rounded-xl bg-white px-3 font-normal"
+                      >
+                        <span className="truncate">
+                          {selectedDoctorId
+                            ? formatDateLabel(selectedDateObject)
+                            : "Select doctor first"}
+                        </span>
+                        <CalendarIcon className="h-4 w-4 opacity-60" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="start"
+                      className="w-auto overflow-hidden p-0 bg-white"
+                    >
+                      <Calendar
+                        mode="single"
+                        selected={selectedDateObject}
+                        className="bg-white"
+                        disabled={isDateDisabled}
+                        onSelect={(date) => {
+                          if (!date || isDateDisabled(date)) return;
+                          setAppointmentDate(formatDateValue(date));
+                          setAppointmentTime("");
+                          setIsCalendarOpen(false);
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <div className="text-xs text-black/50">{scheduleDaysLabel}</div>
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Time</label>
-                  <Input
-                    type="time"
-                    value={appointmentTime}
-                    onChange={(e) => setAppointmentTime(e.target.value)}
-                    disabled={isLoading}
-                    step={900}
-                  />
-                  <div className="text-xs text-black/50">15 minute steps</div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={
+                          !appointmentDate ||
+                          !availableTimeOptions.length ||
+                          isLoading
+                        }
+                        className="h-10 w-full justify-between rounded-xl bg-white px-3 font-normal"
+                      >
+                        <span className="truncate">{selectedTimeLabel}</span>
+                        <ChevronDown className="h-4 w-4 opacity-60" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="start"
+                      className="w-[var(--radix-dropdown-menu-trigger-width)]"
+                    >
+                      <DropdownMenuRadioGroup
+                        value={appointmentTime || "__none"}
+                        onValueChange={(value) =>
+                          setAppointmentTime(value === "__none" ? "" : value)
+                        }
+                      >
+                        <DropdownMenuRadioItem value="__none">
+                          Unselect
+                        </DropdownMenuRadioItem>
+                        {availableTimeOptions.length === 0 ? (
+                          <DropdownMenuItem disabled>
+                            No slots on selected day
+                          </DropdownMenuItem>
+                        ) : (
+                          availableTimeOptions.map((time) => (
+                            <DropdownMenuRadioItem key={time} value={time}>
+                              {formatTimeLabel(time)}
+                            </DropdownMenuRadioItem>
+                          ))
+                        )}
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <div className="text-xs text-black/50">
+                    15 minute slots from doctor schedule
+                  </div>
                 </div>
               </div>
             </div>

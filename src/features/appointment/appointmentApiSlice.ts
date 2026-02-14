@@ -8,6 +8,14 @@ import type {
 } from './type'
 import type { ApiResponse } from '../base-type'
 
+export type AppointmentQueryParams = {
+  startDate?: string
+  endDate?: string
+  pageSize?: number
+  search?: string
+  departmentId?: string
+}
+
 export const appointmentApi = createApi({
   reducerPath: 'appointmentApi',
   tagTypes: ['Appointment'],
@@ -22,8 +30,30 @@ export const appointmentApi = createApi({
     },
   }),
   endpoints: (builder) => ({
-    getAppointments: builder.query<ApiResponse<AppointmentDetails[]>, void>({
-      query: () => '/appointments',
+    getAppointments: builder.query<
+      ApiResponse<AppointmentDetails[]>,
+      AppointmentQueryParams | void
+    >({
+      query: (params) => {
+        const searchParams = new URLSearchParams()
+        if (params?.startDate) {
+          searchParams.set('startDate', params.startDate)
+        }
+        if (params?.pageSize) {
+          searchParams.set('pageSize', params.pageSize.toString())
+        }
+        if (params?.endDate) {
+          searchParams.set('endDate', params.endDate)
+        }
+        if (params?.search) {
+          searchParams.set('search', params.search)
+        }
+        if (params?.departmentId) {
+          searchParams.set('departmentId', params.departmentId)
+        }
+        const queryString = searchParams.toString()
+        return queryString ? `/appointments?${queryString}` : '/appointments'
+      },
       providesTags: (result) =>
         result
           ? [

@@ -10,3 +10,10 @@ export function getDurationMinutes(start: string, end: string) {
   const [eh, em] = end.split(":").map(Number);
   return eh * 60 + em - (sh * 60 + sm);
 }
+
+export function formatDateForApi(date: Date) {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}

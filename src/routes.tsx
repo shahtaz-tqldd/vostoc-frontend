@@ -8,6 +8,7 @@ import DoctorsLayout from "./pages/admin/doctors-layout";
 import DepartmentListPage from "./pages/admin/department-list";
 import ConsultationPage from "./pages/doctors/consultation";
 import ReceptionistListPage from "./pages/admin/receptionist-list";
+import MessagePage from "./pages/common/messages";
 
 export const routes = createBrowserRouter([
   {
@@ -43,6 +44,10 @@ export const routes = createBrowserRouter([
       {
         path: "/consultation/:patientId",
         element: <ConsultationPage />,
+      },
+      {
+        path: "/messages",
+        element: <MessagePage />,
       },
     ],
   },

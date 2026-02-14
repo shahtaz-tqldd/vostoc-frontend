@@ -8,8 +8,8 @@ export type CreateAppointmentPayload = {
   department: string;
   doctorId: string;
 
-  appointmentDate: Date;
-  appointmentTime: Date;
+  appointmentDate: string;
+  appointmentTime: string;
 }
 
 export type Appointment = {
@@ -23,6 +23,8 @@ export type AppointmentDetails = {
   id: string
   patientName?: string
   patientPhone?: string
+  patientAge?: number
+  patientGender?: string
   appointmentDate?: string
   appointmentTime?: string
   status?: string

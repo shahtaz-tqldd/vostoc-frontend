@@ -13,14 +13,16 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MoreHorizontal, Plus, Users, Edit, Trash } from "lucide-react";
 import {
   useDeleteDepartmentMutation,
-  useGetDepartmentsQuery,
 } from "@/features/department/departmentApi";
 import DeleteDialog from "@/components/layout/DeleteDialog";
 import { useState } from "react";
 import NoDataFound from "@/components/layout/NoDataFound";
+import { useAppSelector } from "@/app/hooks";
+import { selectDepartments } from "@/features/department/departmentSlice";
+import type { DepartmentDetails } from "@/features/department/type";
 
 const DepartmentListPage = () => {
-  const { data } = useGetDepartmentsQuery();
+  const departments = useAppSelector(selectDepartments);
   const [deleteOpen, setDeleteOpen] = useState<string | null>(null);
   const [deleteDepartment, { isLoading: isDeleting }] =
     useDeleteDepartmentMutation();
@@ -31,7 +33,7 @@ const DepartmentListPage = () => {
     setDeleteOpen(null);
   };
 
-  const totalDepartment = data?.length || 0;
+  const totalDepartment = departments.length;
   return (
     <>
       {!totalDepartment && (
@@ -40,7 +42,7 @@ const DepartmentListPage = () => {
         </div>
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {data?.map((department, index) => (
+        {departments.map((department, index) => (
           <DepartmentCard
             key={index}
             department={department}
@@ -63,7 +65,12 @@ const DepartmentListPage = () => {
 
 export default DepartmentListPage;
 
-const DepartmentCard = ({ department, setDeleteOpen }) => {
+type DepartmentCardProps = {
+  department: DepartmentDetails;
+  setDeleteOpen: (value: string) => void;
+};
+
+const DepartmentCard = ({ department, setDeleteOpen }: DepartmentCardProps) => {
   const handleAddSpecialty = (departmentId: string) => {
     console.log(`Adding specialty to department ${departmentId}`);
     // Implementation would go here

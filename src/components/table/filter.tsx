@@ -1,13 +1,14 @@
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
+import { DatePickerInput } from "../custom-input/date-picker";
 
 type Option = { label: string; value: string };
 
@@ -20,6 +21,16 @@ export type FilterSelect = {
   widthClassName?: string; // e.g. "w-[180px]"
 };
 
+export type FilterDate = {
+  id: string;
+  value: string;
+  placeholder?: string;
+  onChange: (v: string) => void;
+  widthClassName?: string;
+  min?: string;
+  max?: string;
+};
+
 type FilterBarProps = {
   search?: {
     value: string;
@@ -27,6 +38,7 @@ type FilterBarProps = {
     onChange: (v: string) => void;
   };
   selects?: FilterSelect[];
+  date?: FilterDate;
   onReset?: () => void;
   resetLabel?: string;
   className?: string;
@@ -35,6 +47,7 @@ type FilterBarProps = {
 export function FilterBar({
   search,
   selects,
+  date,
   onReset,
   resetLabel = "Reset",
   className = "",
@@ -51,30 +64,59 @@ export function FilterBar({
             onChange={(e) => search.onChange(e.target.value)}
             className="h-9 !w-[260px] !pl-8"
           />
-          <Search size={14} className="opacity-50 absolute top-1/2 -translate-y-1/2 left-2.5" />
+          <Search
+            size={14}
+            className="opacity-50 absolute top-1/2 -translate-y-1/2 left-2.5"
+          />
         </div>
       )}
 
-      {selects?.map((select) => (
-        <Select
-          key={select.id}
-          value={select.value}
-          onValueChange={select.onChange}
-        >
-          <SelectTrigger
-            className={`h-9 ${select.widthClassName ?? "!w-[180px]"}`}
-          >
-            <SelectValue placeholder={select.placeholder ?? "Filter"} />
-          </SelectTrigger>
-          <SelectContent>
-            {select.options.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      ))}
+      {selects?.map((select) => {
+        const activeOption = select.options.find(
+          (option) => option.value === select.value,
+        );
+
+        return (
+          <DropdownMenu key={select.id}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                className={`h-9 justify-between rounded-xl bg-white px-2.5 font-normal ${select.widthClassName ?? "!w-[180px]"}`}
+              >
+                <span className="truncate">
+                  {activeOption?.label ?? select.placeholder ?? "Filter"}
+                </span>
+                <ChevronDown size={16} className="opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuRadioGroup
+                value={select.value}
+                onValueChange={select.onChange}
+              >
+                {select.options.map((opt) => (
+                  <DropdownMenuRadioItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      })}
+
+      {date && (
+        <DatePickerInput
+          id={date.id}
+          value={date.value}
+          min={date.min}
+          max={date.max}
+          placeholder={date.placeholder ?? "Date"}
+          onChange={date.onChange}
+          className={`h-9 ${date.widthClassName ?? "!w-[180px]"}`}
+        />
+      )}
 
       {showReset && (
         <Button

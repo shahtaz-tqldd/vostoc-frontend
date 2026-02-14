@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { AddDepartmentDialog } from "../department-list/add-department-dialog";
 import AddDoctorDialog, { type AddDoctorPayload } from "./add-doctor-dialog";
 import { useCreateDoctorMutation } from "@/features/doctors/doctorsApi";
-import { useGetDepartmentsQuery } from "@/features/department/departmentApi";
+import { useAppSelector } from "@/app/hooks";
+import { selectDepartmentOptionsWithSpecialties } from "@/features/department/departmentSlice";
 
 const DoctorsLayout = () => {
   const location = useLocation();
@@ -19,20 +20,7 @@ const DoctorsLayout = () => {
   const [createDoctor, { isLoading: isCreatingDoctor }] =
     useCreateDoctorMutation();
 
-  const { data: departments = [] } = useGetDepartmentsQuery();
-
-  const departmentOptions = useMemo(
-    () =>
-      departments.map((department) => ({
-        label: department.name,
-        value: department.id,
-        specialties: department.specialties?.map((item) => ({
-          label: item.name,
-          value: item.name,
-        })),
-      })),
-    [departments],
-  );
+  const departmentOptions = useAppSelector(selectDepartmentOptionsWithSpecialties);
 
   const handleCreateDoctor = async (payload: AddDoctorPayload) => {
     const schedules = Object.entries(payload.schedule)

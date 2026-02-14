@@ -1,20 +1,5 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { adminAppointments, doctorLoads } from "@/data/mock";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+
 import { TODAYS_APPOINTMENTS } from "@/pages/doctors/overview/mock_data";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -22,69 +7,26 @@ import { PATIENTS } from "@/pages/doctors/consultation/mock_data";
 import { Square, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const statusTone: Record<string, "mint" | "coral" | "ink"> = {
-  Confirmed: "mint",
-  Pending: "coral",
-  Completed: "ink",
-};
+import TodaysAppointmentQueue from "./todays-appointment";
+import ActiveDoctorList from "@/pages/common/components/active-doctor-list";
 
 export default function ReceptionistOverviewPage() {
   return (
     <div className="grid grid-cols-3 gap-5">
       <div className="col-span-2 space-y-4">
         <Stats />
-        <AppointmentList />
+        <TodaysAppointmentQueue />
+        <ActiveDoctorList />
       </div>
       <div className="col-span-1 space-y-4">
         <NextPatientCard />
-        <ActiveDoctorList />
+        <NextPatientCard />
+        <NextPatientCard />
+        <NextPatientCard />
       </div>
     </div>
   );
 }
-
-const AppointmentList = () => {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Appointment queue</CardTitle>
-        <CardDescription>
-          Bookings grouped by assigned doctor and time slot.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="mt-6">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Appointment</TableHead>
-              <TableHead>Patient</TableHead>
-              <TableHead>Doctor</TableHead>
-              <TableHead>Slot</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {adminAppointments.map((appointment) => (
-              <TableRow key={appointment.id}>
-                <TableCell className="font-semibold text-ink-900">
-                  {appointment.id}
-                </TableCell>
-                <TableCell>{appointment.patient}</TableCell>
-                <TableCell>{appointment.doctor}</TableCell>
-                <TableCell>{appointment.time}</TableCell>
-                <TableCell>
-                  <Badge variant={statusTone[appointment.status]}>
-                    {appointment.status}
-                  </Badge>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  );
-};
 
 const Stats = () => {
   const completed = TODAYS_APPOINTMENTS.filter(
@@ -277,36 +219,4 @@ const NextPatientCard = () => {
   }
 
   return null;
-};
-
-const ActiveDoctorList = () => {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Doctor load</CardTitle>
-        <CardDescription>Slots filled, by department</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-2.5 mt-6">
-        {doctorLoads.map((doctor) => (
-          <div
-            key={doctor.name}
-            className="rounded-2xl border border-ink-200/70 bg-white/80 p-4"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold text-ink-900">
-                  {doctor.name}
-                </div>
-                <div className="text-xs text-ink-500">{doctor.department}</div>
-              </div>
-              <Badge variant="mint">{doctor.slotFill}</Badge>
-            </div>
-            <div className="mt-3 text-xs text-ink-500">
-              Next available: {doctor.nextAvailable}
-            </div>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
 };

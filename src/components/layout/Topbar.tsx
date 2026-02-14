@@ -13,13 +13,13 @@ import {
 import { LogOut, Plus, Search } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import AddReceptionistDialog from "@/pages/admin/receptionist-list/add-receptionist-dialog";
-import { useMemo, useState } from "react";
-import { useGetDepartmentsQuery } from "@/features/department/departmentApi";
+import { useState } from "react";
 import AppointmentBookingDialog from "@/pages/common/appointment-list/add-appointment-dialog";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { clearAuth } from "@/features/auth/authSlice";
 import { deleteCookie } from "@/lib/cookie";
 import { getProfileItemsByRole } from "@/config/navigation";
+import { selectDepartmentOptionsWithSpecialties } from "@/features/department/departmentSlice";
 
 export type TopbarProps = {
   title: string;
@@ -31,20 +31,7 @@ export function CommonTopbar({ title, subtitle }: TopbarProps) {
   const isReceptionPage = location.pathname === "/receptionist";
   const [addReceptionist, setAddReceptionist] = useState(false);
   const [appointmentBookingOpen, setAppointmentBookingOpen] = useState(false);
-  const { data: departments = [] } = useGetDepartmentsQuery();
-
-  const departmentOptions = useMemo(
-    () =>
-      departments.map((department) => ({
-        label: department.name,
-        value: department.id,
-        specialties: department.specialties?.map((item) => ({
-          label: item.name,
-          value: item.name,
-        })),
-      })),
-    [departments],
-  );
+  const departmentOptions = useAppSelector(selectDepartmentOptionsWithSpecialties);
   return (
     <>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -98,20 +85,7 @@ export function ReceptionistTopbar({ title, subtitle }: TopbarProps) {
   const location = useLocation();
   const isReceptionPage = location.pathname === "/receptionist";
   const [addReceptionist, setAddReceptionist] = useState(false);
-  const { data: departments = [] } = useGetDepartmentsQuery();
-
-  const departmentOptions = useMemo(
-    () =>
-      departments.map((department) => ({
-        label: department.name,
-        value: department.id,
-        specialties: department.specialties?.map((item) => ({
-          label: item.name,
-          value: item.name,
-        })),
-      })),
-    [departments],
-  );
+  const departmentOptions = useAppSelector(selectDepartmentOptionsWithSpecialties);
   return (
     <>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">

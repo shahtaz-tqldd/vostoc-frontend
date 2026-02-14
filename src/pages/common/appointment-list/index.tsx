@@ -1,54 +1,52 @@
 import { useMemo, useState } from "react";
 import { DataTable, type ColumnDef } from "@/components/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/ui/badge";
 import {
   useDeleteAppointmentMutation,
   useGetAppointmentsQuery,
 } from "@/features/appointment/appointmentApiSlice";
-import type { AppointmentDetails } from "@/features/appointment/type";
-import { Trash2 } from "lucide-react";
+import { Download, Eye, Pencil, Trash2 } from "lucide-react";
+import moment from "moment";
+import ThreeDotMenu from "@/components/layout/ThreeDotMenu";
 
 type AppointmentRow = {
   id: string;
   patient: string;
-  doctor: string;
+  patientAge: number | null;
+  patientGender: string | null;
+  doctor:
+    | {
+        id: string;
+        name: string;
+        image_url?: string;
+        department?: { name?: string };
+        specialty?: { name?: string };
+      }
+    | undefined;
   time: string;
-  status: "Scheduled" | "Confirmed" | "Completed" | "Cancelled" | "Pending";
-};
-
-const formatTimeSlot = (item: AppointmentDetails) => {
-  if (item.appointmentTime) return item.appointmentTime;
-  if (!item.appointmentDate) return "N/A";
-  const dateValue = new Date(item.appointmentDate);
-  if (Number.isNaN(dateValue.getTime())) return "N/A";
-  return dateValue.toLocaleString([], {
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
-const mapApiStatus = (status?: string): AppointmentRow["status"] => {
-  const normalized = status?.toLowerCase();
-  if (normalized === "completed") return "Completed";
-  if (normalized === "cancelled") return "Cancelled";
-  if (normalized === "confirmed") return "Confirmed";
-  if (normalized === "pending") return "Pending";
-  return "Scheduled";
+  date: string;
+  contact: string | null;
+  status: string;
 };
 
 export default function AppointmentListPage() {
   const itemsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [selectedDate, setSelectedDate] = useState();
 
   const {
     data,
     isLoading: isAppointmentLoading,
     isFetching: isAppointmentFetching,
     isError,
-  } = useGetAppointmentsQuery();
+  } = useGetAppointmentsQuery({
+    search: search,
+    startDate: selectedDate,
+    endDate: selectedDate,
+    pageSize: itemsPerPage,
+  });
+
   const [deleteAppointment, { isLoading: isDeletingAppointment }] =
     useDeleteAppointmentMutation();
 
@@ -57,19 +55,31 @@ export default function AppointmentListPage() {
       (data?.data || []).map((item) => ({
         id: item.id,
         patient: item.patientName || "Unknown patient",
-        doctor: item.doctor?.name || "Unassigned",
-        time: formatTimeSlot(item),
-        status: mapApiStatus(item.status),
+        patientAge: item.patientAge || null,
+        patientGender: item.patientGender || null,
+        contact: item.patientPhone || null,
+        doctor: item.doctor,
+        time: item.appointmentTime || "N/A",
+        date: item.appointmentDate
+          ? `${moment(item.appointmentDate).format("DD MMM YYYY")} • ${moment(item.appointmentDate).format("dddd")}`
+          : "N/A",
+        status: item?.status || "unknown",
       })),
     [data],
   );
 
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setCurrentPage(1);
+  };
+
+  const handleDateChange = (value: string) => {
+    setSelectedDate(value);
+    setCurrentPage(1);
+  };
+
   const totalPages = Math.max(1, Math.ceil(rows.length / itemsPerPage));
   const safeCurrentPage = Math.min(currentPage, totalPages);
-  const paginatedData = rows.slice(
-    (safeCurrentPage - 1) * itemsPerPage,
-    safeCurrentPage * itemsPerPage,
-  );
 
   const handleDeleteAppointment = async (id: string) => {
     try {
@@ -79,18 +89,55 @@ export default function AppointmentListPage() {
     }
   };
 
+  const handleViewAppointment = (id: string) => {
+    console.log(`View appointment ${id}`);
+  };
+
+  const handleUpdateAppointment = (id: string) => {
+    console.log(`Update appointment ${id}`);
+  };
+
+  const handleDownloadReport = (id: string) => {
+    console.log(`Download appointment report ${id}`);
+  };
+
   const appointmentColumns: ColumnDef<AppointmentRow>[] = [
     {
-      header: "Appointment ID",
-      accessorKey: "id",
+      header: "Patient",
+      accessorKey: "patient",
+      cell: (row) => {
+        return (
+          <div>
+            <h2>{row.patient}</h2>
+            <p className="text-xs opacity-60">
+              Age: {row.patientAge || "N/A"} • {row.patientGender || "N/A"}
+            </p>
+          </div>
+        );
+      },
     },
     {
-      header: "Patient Name",
-      accessorKey: "patient",
+      header: "Contact",
+      accessorKey: "contact",
     },
     {
       header: "Assigned Doctor",
       accessorKey: "doctor",
+      cell: (row) => {
+        return (
+          <div>
+            <h2>{row.doctor?.name || "Unassigned"}</h2>
+            <p className="text-xs opacity-60">
+              {row.doctor?.department?.name || "No Department"} •{" "}
+              {row.doctor?.specialty?.name || "No Specialization"}
+            </p>
+          </div>
+        );
+      },
+    },
+    {
+      header: "Date",
+      accessorKey: "date",
     },
     {
       header: "Time Slot",
@@ -100,32 +147,47 @@ export default function AppointmentListPage() {
       header: "Status",
       accessorKey: "status",
       cell: (row) => {
+        const statusToVariant = {
+          new: "success",
+          "follow-up": "pending",
+        } as const;
         const variant =
-          row.status === "Completed"
-            ? "ink"
-            : row.status === "Cancelled"
-              ? "coral"
-              : row.status === "Pending"
-                ? "coral"
-                : "mint";
-        return <Badge variant={variant}>{row.status}</Badge>;
+          statusToVariant[row.status as keyof typeof statusToVariant] ??
+          "disabled";
+
+        return <StatusBadge status={variant} label={row.status} />;
       },
     },
     {
       header: "Action",
       accessorKey: "id",
       cell: (row) => (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => handleDeleteAppointment(row.id)}
-          disabled={isDeletingAppointment}
-          className="rounded-md px-2 text-red-600 hover:text-red-700"
-        >
-          <Trash2 size={14} />
-          Delete
-        </Button>
+        <ThreeDotMenu
+          items={[
+            {
+              label: "View",
+              icon: Eye,
+              onClick: () => handleViewAppointment(row.id),
+            },
+            {
+              label: "Update",
+              icon: Pencil,
+              onClick: () => handleUpdateAppointment(row.id),
+            },
+            {
+              label: "Delete",
+              icon: Trash2,
+              destructive: true,
+              disabled: isDeletingAppointment,
+              onClick: () => handleDeleteAppointment(row.id),
+            },
+            {
+              label: "Download Report",
+              icon: Download,
+              onClick: () => handleDownloadReport(row.id),
+            },
+          ]}
+        />
       ),
     },
   ];
@@ -135,8 +197,26 @@ export default function AppointmentListPage() {
       <DataTable<AppointmentRow>
         title="Appointment Queue"
         description="Bookings grouped by assigned doctor and time slot."
-        data={paginatedData}
+        data={rows}
         columns={appointmentColumns}
+        filters={{
+          search: {
+            value: search,
+            placeholder: "Search appointments...",
+            onChange: handleSearchChange,
+          },
+          date: {
+            id: "appointment-date",
+            value: selectedDate,
+            onChange: handleDateChange,
+            widthClassName: "!w-[180px]",
+          },
+          onReset: () => {
+            setSearch("");
+            setSelectedDate(undefined);
+            setCurrentPage(1);
+          },
+        }}
         currentPage={safeCurrentPage}
         totalPages={totalPages}
         setCurrentPage={setCurrentPage}

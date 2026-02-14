@@ -7,7 +7,8 @@ import type {
   ReceptionistStatus,
 } from "@/features/receptionist/type";
 import { useGetReceptionistsQuery } from "@/features/receptionist/receptionistApi";
-import { useGetDepartmentsQuery } from "@/features/department/departmentApi";
+import { useAppSelector } from "@/app/hooks";
+import { selectDepartmentFilterOptions } from "@/features/department/departmentSlice";
 
 const receptionistColumns: ColumnDef<Receptionist>[] = [
   {
@@ -93,7 +94,6 @@ export default function ReceptionistListPage() {
     page: currentPage,
     pageSize: itemsPerPage,
   });
-  const { data: departmentsData } = useGetDepartmentsQuery();
 
   const receptionists = useMemo<Receptionist[]>(() => {
     if (!receptionistData?.data) {
@@ -118,14 +118,7 @@ export default function ReceptionistListPage() {
   const totalPages = Math.max(1, Math.ceil(totalItems / effectivePageSize));
   const safeCurrentPage = Math.min(currentPage, totalPages);
 
-  const departmentOptions = useMemo(
-    () =>
-      (departmentsData ?? []).map((dept) => ({
-        label: dept.name,
-        value: dept.name,
-      })),
-    [departmentsData],
-  );
+  const departmentOptions = useAppSelector(selectDepartmentFilterOptions);
 
   return (
     <DataTable<Receptionist>

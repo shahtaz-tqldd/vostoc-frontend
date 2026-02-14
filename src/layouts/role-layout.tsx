@@ -5,6 +5,8 @@ import { CommonTopbar } from "@/components/layout/Topbar";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { useMeQuery } from "@/features/auth/authApi";
 import { clearAuth, setMe, setRole } from "@/features/auth/authSlice";
+import { useGetDepartmentsQuery } from "@/features/department/departmentApi";
+import { setDepartments } from "@/features/department/departmentSlice";
 import type { Role } from "@/features/auth/authSlice";
 import { deleteCookie, getCookie } from "@/lib/cookie";
 import { cn } from "@/lib/utils";
@@ -27,6 +29,9 @@ export function RoleLayout() {
   const { data, isLoading, isError } = useMeQuery(undefined, {
     skip: !token,
   });
+  const { data: departmentsData } = useGetDepartmentsQuery(undefined, {
+    skip: !token,
+  });
 
   useEffect(() => {
     const normalized = normalizeRole(data?.role);
@@ -44,6 +49,11 @@ export function RoleLayout() {
       dispatch(clearAuth());
     }
   }, [dispatch, isError]);
+
+  useEffect(() => {
+    if (!departmentsData) return;
+    dispatch(setDepartments(departmentsData));
+  }, [departmentsData, dispatch]);
 
   const normalizedRole = normalizeRole(data?.role);
   const effectiveRole = role ?? normalizedRole;

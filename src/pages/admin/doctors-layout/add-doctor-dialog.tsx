@@ -10,14 +10,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import {
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -96,6 +98,21 @@ export default function AddDoctorDialog({
     return departmentOptions.find((option) => option.value === department)
       ?.specialties;
   }, [department, departmentOptions]);
+
+  const selectedDepartmentLabel = useMemo(() => {
+    return (
+      departmentOptions.find((option) => option.value === department)?.label ??
+      "Select department"
+    );
+  }, [department, departmentOptions]);
+
+  const selectedSpecialtyLabel = useMemo(() => {
+    if (!department) return "Select department first";
+    return (
+      filteredSpecialtyOptions?.find((option) => option.value === specialty)
+        ?.label ?? "Select specialty"
+    );
+  }, [department, filteredSpecialtyOptions, specialty]);
 
   useEffect(() => {
     if (!imageFile) {
@@ -288,43 +305,105 @@ export default function AddDoctorDialog({
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Department</label>
-                  <Select value={department} onValueChange={setDepartment}>
-                    <SelectTrigger className="h-10" disabled={isLoading}>
-                      <SelectValue placeholder="Select department" />
-                    </SelectTrigger>
-                    <SelectContent>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={isLoading}
+                        className="h-10 w-full justify-between rounded-xl bg-white px-3 font-normal"
+                      >
+                        <span className="truncate">{selectedDepartmentLabel}</span>
+                        <ChevronDown className="h-4 w-4 opacity-60" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="start"
+                      className="w-[var(--radix-dropdown-menu-trigger-width)]"
+                    >
+                      <DropdownMenuRadioGroup
+                        value={department || "__none"}
+                        onValueChange={(value) => {
+                          if (value === "__none") {
+                            setDepartment("");
+                            setSpecialty("");
+                            return;
+                          }
+
+                          setDepartment(value);
+                          const nextSpecialties =
+                            departmentOptions.find(
+                              (option) => option.value === value,
+                            )?.specialties ?? [];
+                          if (
+                            specialty &&
+                            !nextSpecialties.some(
+                              (option) => option.value === specialty,
+                            )
+                          ) {
+                            setSpecialty("");
+                          }
+                        }}
+                      >
+                        <DropdownMenuRadioItem value="__none">
+                          Unselect
+                        </DropdownMenuRadioItem>
                       {departmentOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
+                        <DropdownMenuRadioItem
+                          key={option.value}
+                          value={option.value}
+                        >
                           {option.label}
-                        </SelectItem>
+                        </DropdownMenuRadioItem>
                       ))}
-                    </SelectContent>
-                  </Select>
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Specialty</label>
-                  <Select
-                    value={specialty}
-                    onValueChange={setSpecialty}
-                    disabled={!department || isLoading}
-                  >
-                    <SelectTrigger className="h-10">
-                      <SelectValue
-                        placeholder={
-                          department
-                            ? "Select specialty"
-                            : "Select department first"
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={!department || isLoading}
+                        className="h-10 w-full justify-between rounded-xl bg-white px-3 font-normal"
+                      >
+                        <span className="truncate">{selectedSpecialtyLabel}</span>
+                        <ChevronDown className="h-4 w-4 opacity-60" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="start"
+                      className="w-[var(--radix-dropdown-menu-trigger-width)]"
+                    >
+                      <DropdownMenuRadioGroup
+                        value={specialty || "__none"}
+                        onValueChange={(value) =>
+                          setSpecialty(value === "__none" ? "" : value)
                         }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filteredSpecialtyOptions?.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                      >
+                        <DropdownMenuRadioItem value="__none">
+                          Unselect
+                        </DropdownMenuRadioItem>
+                        {filteredSpecialtyOptions?.length ? (
+                          filteredSpecialtyOptions.map((option) => (
+                            <DropdownMenuRadioItem
+                              key={option.value}
+                              value={option.value}
+                            >
+                              {option.label}
+                            </DropdownMenuRadioItem>
+                          ))
+                        ) : (
+                          <DropdownMenuItem disabled>
+                            No specialties found
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
 

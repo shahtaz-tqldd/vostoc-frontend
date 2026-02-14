@@ -16,6 +16,7 @@ import {
 } from "../ui/table";
 import { FilterBar } from "./filter";
 import type { FilterSelect } from "./filter";
+import type { FilterDate } from "./filter";
 import { Pagination } from "./pagination";
 import NoDataFound from "../layout/NoDataFound";
 
@@ -32,6 +33,7 @@ type TableFilters = {
     onChange: (v: string) => void;
   };
   selects?: FilterSelect[];
+  date?: FilterDate;
   onReset?: () => void;
   resetLabel?: string;
   className?: string;
@@ -75,6 +77,7 @@ export function DataTable<T>({
               className={filters.className ?? "pt-2"}
               search={filters.search}
               selects={filters.selects}
+              date={filters.date}
               onReset={filters.onReset}
               resetLabel={filters.resetLabel}
             />

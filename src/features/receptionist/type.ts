@@ -23,7 +23,8 @@ export type CreateReceptionistPayload = {
   username: string
   password: string
   image?: File
-  department_id: string
+  department_id?: string
+  department_ids?: string[]
   contact_number: string
   shift: ReceptionistShift
   description?: string
