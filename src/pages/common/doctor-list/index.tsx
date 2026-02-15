@@ -81,56 +81,56 @@ const DoctorScheduleMenu = ({ schedules }: { schedules: DoctorSchedule[] }) => {
 
 const getDoctorColumns = (isAdmin: boolean): ColumnDef<Doctor>[] => {
   const baseColumns: ColumnDef<Doctor>[] = [
-  {
-    header: "Doctor",
-    accessorKey: "name",
-    cell: (row) => (
-      <div className="flex items-center gap-3">
-        <Avatar className="h-12 w-12">
-          <AvatarImage src={row.imageUrl} alt={row.name} />
-          <AvatarFallback>
-            {row.name.split(" ")[1]?.charAt(0) || row.name.charAt(0)}
-          </AvatarFallback>
-        </Avatar>
-        <div>
-          <div className="font-medium text-base">{row.name}</div>
-          <div className="text-sm text-muted-foreground uppercase">
-            doc-{row.id.slice(-6)}
+    {
+      header: "Doctor",
+      accessorKey: "name",
+      cell: (row) => (
+        <div className="flex items-center gap-3">
+          <Avatar className="h-11 w-11">
+            <AvatarImage src={row.imageUrl} alt={row.name} />
+            <AvatarFallback>
+              {row.name.split(" ")[1]?.charAt(0) || row.name.charAt(0)}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <div className="font-medium text-base">{row.name}</div>
+            <div className="text-sm text-muted-foreground uppercase">
+              doc-{row.id.slice(-6)}
+            </div>
           </div>
         </div>
-      </div>
-    ),
-  },
-  {
-    header: "Specialty",
-    accessorKey: "specialty",
-  },
-  {
-    header: "Department",
-    accessorKey: "department",
-  },
-  {
-    header: "Contact",
-    accessorKey: "contact",
-  },
-  {
-    header: "Status",
-    accessorKey: "status",
-    cell: (row) => {
-      const variant = {
-        Active: "success",
-        "On Leave": "failed",
-        Unavailable: "disabled",
-      }[row.status] as "success" | "failed" | "disabled";
-
-      return <StatusBadge status={variant} label={row.status} />;
+      ),
     },
-  },
-  {
-    header: "Schedule",
-    accessorKey: "scheduleDisplay",
-    cell: (row) => <DoctorScheduleMenu schedules={row.schedules} />,
-  },
+    {
+      header: "Specialty",
+      accessorKey: "specialty",
+    },
+    {
+      header: "Department",
+      accessorKey: "department",
+    },
+    {
+      header: "Contact",
+      accessorKey: "contact",
+    },
+    {
+      header: "Status",
+      accessorKey: "status",
+      cell: (row) => {
+        const variant = {
+          Active: "success",
+          "On Leave": "failed",
+          Unavailable: "disabled",
+        }[row.status] as "success" | "failed" | "disabled";
+
+        return <StatusBadge status={variant} label={row.status} />;
+      },
+    },
+    {
+      header: "Schedule",
+      accessorKey: "scheduleDisplay",
+      cell: (row) => <DoctorScheduleMenu schedules={row.schedules} />,
+    },
   ];
 
   if (!isAdmin) {
@@ -204,7 +204,10 @@ export default function DoctorListPage() {
     }));
   }, [doctorsData]);
 
-  const doctorColumns = useMemo(() => getDoctorColumns(role === "admin"), [role]);
+  const doctorColumns = useMemo(
+    () => getDoctorColumns(role === "admin"),
+    [role],
+  );
 
   const departmentOptions = useAppSelector(selectDepartmentFilterOptions);
 

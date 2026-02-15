@@ -49,8 +49,9 @@ const ThreeDotMenu = ({
               onClick={item.onClick}
               disabled={item.disabled}
               variant={item.destructive ? "destructive" : "default"}
+              className="text-sm font-medium text-gray-600"
             >
-              {Icon ? <Icon className="mr-2 h-3.5 w-3.5 opacity-60" /> : null}
+              {Icon ? <Icon className="mr-1 !h-3.5 !w-3.5" /> : null}
               {item.label}
             </DropdownMenuItem>
           );

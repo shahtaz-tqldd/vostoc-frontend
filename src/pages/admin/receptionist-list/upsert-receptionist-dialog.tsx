@@ -20,8 +20,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ChevronDown, UploadCloud, UserRound } from "lucide-react";
-import type { ReceptionistShift } from "@/features/receptionist/type";
-import { useCreateReceptionistMutation } from "@/features/receptionist/receptionistApi";
+import type {
+  ReceptionistShift,
+  UpdateReceptionistPayload,
+} from "@/features/receptionist/type";
+import {
+  useCreateReceptionistMutation,
+  useUpdateReceptionistMutation,
+} from "@/features/receptionist/receptionistApi";
 
 type SelectOption = {
   label: string;
@@ -33,21 +39,37 @@ type ShiftOption = {
   value: ReceptionistShift;
 };
 
-export type AddReceptionistPayload = {
+export type UpsertReceptionistInitialData = {
+  id: string;
   name: string;
-  username: string;
-  password: string;
-  imageFile?: File;
+  username?: string;
+  profileImageUrl?: string;
   departments: string[];
   contactNumber: string;
   shift: ReceptionistShift;
   description?: string;
 };
 
-type AddReceptionistDialogProps = {
+const normalizeDepartmentIds = (ids: string[]) => [...ids].sort();
+
+const sameDepartmentIds = (left: string[], right: string[]) => {
+  const normalizedLeft = normalizeDepartmentIds(left);
+  const normalizedRight = normalizeDepartmentIds(right);
+
+  if (normalizedLeft.length !== normalizedRight.length) {
+    return false;
+  }
+
+  return normalizedLeft.every(
+    (value, index) => value === normalizedRight[index],
+  );
+};
+
+type UpsertReceptionistDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   departmentOptions: SelectOption[];
+  initialData?: UpsertReceptionistInitialData | null;
 };
 
 const SHIFT_OPTIONS: ShiftOption[] = [
@@ -56,61 +78,99 @@ const SHIFT_OPTIONS: ShiftOption[] = [
   { label: "Night", value: "Night" },
 ];
 
-export default function AddReceptionistDialog({
+export default function UpsertReceptionistDialog({
   open,
   onOpenChange,
   departmentOptions,
-}: AddReceptionistDialogProps) {
+  initialData,
+}: UpsertReceptionistDialogProps) {
   const fileInputId = useId();
 
-  const [name, setName] = useState("");
-  const [username, setUsername] = useState("");
+  const [name, setName] = useState(initialData?.name ?? "");
+  const [username, setUsername] = useState(initialData?.username ?? "");
   const [password, setPassword] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>("");
-  const [departmentIds, setDepartmentIds] = useState<string[]>([]);
-  const [contactNumber, setContactNumber] = useState("");
-  const [shift, setShift] = useState<ShiftOption["value"]>("Morning");
-  const [description, setDescription] = useState("");
+  const [departmentIds, setDepartmentIds] = useState<string[]>(
+    initialData?.departments ?? [],
+  );
+  const [contactNumber, setContactNumber] = useState(
+    initialData?.contactNumber ?? "",
+  );
+  const [shift, setShift] = useState<ShiftOption["value"]>(
+    initialData?.shift ?? "Morning",
+  );
+  const [description, setDescription] = useState(
+    initialData?.description ?? "",
+  );
   const [isDragActive, setIsDragActive] = useState(false);
 
+  const imagePreview = useMemo(
+    () => (imageFile ? URL.createObjectURL(imageFile) : ""),
+    [imageFile],
+  );
+
   useEffect(() => {
-    if (!imageFile) {
-      setImagePreview("");
-      return;
+    if (!imagePreview) return;
+    return () => URL.revokeObjectURL(imagePreview);
+  }, [imagePreview]);
+
+  const isUpdateMode = Boolean(initialData?.id);
+
+  const hasChanges = useMemo(() => {
+    if (!isUpdateMode || !initialData) {
+      return true;
     }
 
-    const previewUrl = URL.createObjectURL(imageFile);
-    setImagePreview(previewUrl);
-    return () => URL.revokeObjectURL(previewUrl);
-  }, [imageFile]);
+    const initialName = initialData.name?.trim() ?? "";
+    const initialUsername = initialData.username?.trim() ?? "";
+    const initialContact = initialData.contactNumber?.trim() ?? "";
+    const initialDescription = initialData.description?.trim() ?? "";
+
+    return (
+      name.trim() !== initialName ||
+      username.trim() !== initialUsername ||
+      contactNumber.trim() !== initialContact ||
+      shift !== initialData.shift ||
+      description.trim() !== initialDescription ||
+      !sameDepartmentIds(departmentIds, initialData.departments ?? []) ||
+      Boolean(password.trim()) ||
+      Boolean(imageFile)
+    );
+  }, [
+    contactNumber,
+    departmentIds,
+    description,
+    imageFile,
+    initialData,
+    isUpdateMode,
+    name,
+    password,
+    shift,
+    username,
+  ]);
 
   const isValid = useMemo(() => {
     return (
       name.trim() &&
-      username.trim() &&
-      password.trim() &&
       departmentIds.length > 0 &&
       contactNumber.trim() &&
-      shift
+      shift &&
+      (isUpdateMode ? hasChanges : username.trim() && password.trim())
     );
-  }, [contactNumber, departmentIds, name, password, shift, username]);
+  }, [
+    contactNumber,
+    departmentIds.length,
+    hasChanges,
+    isUpdateMode,
+    name,
+    password,
+    shift,
+    username,
+  ]);
 
   const handleSetFile = (file?: File | null) => {
     if (!file || !file.type.startsWith("image/")) return;
     setImageFile(file);
-  };
-
-  const resetForm = () => {
-    setName("");
-    setUsername("");
-    setPassword("");
-    setImageFile(null);
-    setImagePreview("");
-    setDepartmentIds([]);
-    setContactNumber("");
-    setShift("Morning");
-    setDescription("");
   };
 
   const selectedDepartmentOptions = useMemo(
@@ -146,23 +206,69 @@ export default function AddReceptionistDialog({
     );
   };
 
-  const [createReceptionist, { isLoading }] = useCreateReceptionistMutation();
+  const [createReceptionist, { isLoading: isCreating }] =
+    useCreateReceptionistMutation();
+  const [updateReceptionist, { isLoading: isUpdating }] =
+    useUpdateReceptionistMutation();
+  const isLoading = isCreating || isUpdating;
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!isValid) return;
-    await createReceptionist({
-      name: name.trim(),
-      username: username.trim(),
-      password: password.trim(),
-      image: imageFile ?? undefined,
-      department_ids: departmentIds,
-      contact_number: contactNumber.trim(),
-      shift,
-      description: description.trim() || undefined,
-    }).unwrap();
 
-    resetForm();
+    if (isUpdateMode && initialData?.id) {
+      const payload: UpdateReceptionistPayload = {};
+      const currentName = name.trim();
+      const currentUsername = username.trim();
+      const currentContact = contactNumber.trim();
+      const currentDescription = description.trim();
+      const currentDepartments = normalizeDepartmentIds(departmentIds);
+      const initialDepartments = normalizeDepartmentIds(
+        initialData.departments ?? [],
+      );
+
+      if (currentName !== (initialData.name?.trim() ?? "")) {
+        payload.name = currentName;
+      }
+      if (currentUsername !== (initialData.username?.trim() ?? "")) {
+        payload.username = currentUsername;
+      }
+      if (currentContact !== (initialData.contactNumber?.trim() ?? "")) {
+        payload.contact_number = currentContact;
+      }
+      if (shift !== initialData.shift) {
+        payload.shift = shift;
+      }
+      if (!sameDepartmentIds(currentDepartments, initialDepartments)) {
+        payload.department_ids = currentDepartments;
+      }
+      if (currentDescription !== (initialData.description?.trim() ?? "")) {
+        payload.description = currentDescription;
+      }
+      if (password.trim()) {
+        payload.password = password.trim();
+      }
+      if (imageFile) {
+        payload.image = imageFile;
+      }
+
+      await updateReceptionist({
+        receptionistId: initialData.id,
+        payload,
+      }).unwrap();
+    } else {
+      await createReceptionist({
+        name: name.trim(),
+        username: username.trim(),
+        password: password.trim(),
+        image: imageFile ?? undefined,
+        department_ids: departmentIds,
+        contact_number: contactNumber.trim(),
+        shift,
+        description: description.trim() || undefined,
+      }).unwrap();
+    }
+
     onOpenChange(false);
   };
 
@@ -170,9 +276,13 @@ export default function AddReceptionistDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="md:max-w-[560px]">
         <DialogHeader>
-          <DialogTitle>Add Receptionist</DialogTitle>
+          <DialogTitle>
+            {isUpdateMode ? "Update Receptionist" : "Add Receptionist"}
+          </DialogTitle>
           <DialogDescription>
-            Enter the receptionist&apos;s basic information.
+            {isUpdateMode
+              ? "Edit receptionist information and save changes."
+              : "Enter the receptionist&apos;s basic information."}
           </DialogDescription>
         </DialogHeader>
 
@@ -216,7 +326,9 @@ export default function AddReceptionistDialog({
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder={
+                  isUpdateMode ? "Leave blank to keep current" : "••••••••"
+                }
                 disabled={isLoading}
               />
             </div>
@@ -356,9 +468,9 @@ export default function AddReceptionistDialog({
                   : "border-ink-200 bg-white/70 hover:border-ink-400",
               )}
             >
-              {imagePreview ? (
+              {imagePreview || initialData?.profileImageUrl ? (
                 <img
-                  src={imagePreview}
+                  src={imagePreview || initialData?.profileImageUrl}
                   alt="Receptionist preview"
                   className="h-14 w-14 rounded-full object-cover"
                 />
@@ -394,7 +506,13 @@ export default function AddReceptionistDialog({
               disabled={!isValid || isLoading}
               className={!isValid || isLoading ? "opacity-50" : ""}
             >
-              {isLoading ? "Creating..." : "Create Receptionist"}
+              {isLoading
+                ? isUpdateMode
+                  ? "Updating..."
+                  : "Creating..."
+                : isUpdateMode
+                  ? "Update Receptionist"
+                  : "Create Receptionist"}
             </Button>
           </DialogFooter>
         </form>

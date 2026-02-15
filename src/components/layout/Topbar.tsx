@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LogOut, Plus, Search } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import AddReceptionistDialog from "@/pages/admin/receptionist-list/add-receptionist-dialog";
+import UpsertReceptionistDialog from "@/pages/admin/receptionist-list/upsert-receptionist-dialog";
 import { useState } from "react";
 import AppointmentBookingDialog from "@/pages/common/appointment-list/add-appointment-dialog";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
@@ -67,7 +67,8 @@ export function CommonTopbar({ title, subtitle }: TopbarProps) {
           <ProfileMenu />
         </div>
       </div>
-      <AddReceptionistDialog
+      <UpsertReceptionistDialog
+        key={addReceptionist ? "create-open" : "create-closed"}
         open={addReceptionist}
         onOpenChange={setAddReceptionist}
         departmentOptions={departmentOptions}
@@ -122,7 +123,8 @@ export function ReceptionistTopbar({ title, subtitle }: TopbarProps) {
           <ProfileMenu />
         </div>
       </div>
-      <AddReceptionistDialog
+      <UpsertReceptionistDialog
+        key={addReceptionist ? "create-open" : "create-closed"}
         open={addReceptionist}
         onOpenChange={setAddReceptionist}
         departmentOptions={departmentOptions}

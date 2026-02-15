@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 
 type DeleteDialogProps = {
-  open: string | null;
+  open: boolean;
   onOpenChange: (open: boolean) => void;
   title?: string;
   description?: string;
@@ -18,7 +18,7 @@ type DeleteDialogProps = {
   confirmLabel?: string;
   cancelLabel?: string;
   isLoading?: boolean;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
 };
 
 const DeleteDialog = ({
@@ -41,7 +41,7 @@ const DeleteDialog = ({
       <DialogContent className="sm:max-w-[460px]">
         <DialogHeader>
           <div className="h-12 w-12 rounded-xl bg-red-500/10 flex items-center justify-center mb-3.5">
-            <Trash2 className="text-red-500"/>
+            <Trash2 className="text-red-500" />
           </div>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
@@ -59,7 +59,7 @@ const DeleteDialog = ({
           </Button>
           <Button
             type="button"
-            onClick={onConfirm}
+            onClick={() => void onConfirm()}
             disabled={isLoading}
             className="bg-red-600 text-white hover:bg-red-700 !border-none"
           >

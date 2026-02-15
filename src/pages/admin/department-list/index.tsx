@@ -51,7 +51,7 @@ const DepartmentListPage = () => {
         ))}
       </div>
       <DeleteDialog
-        open={deleteOpen}
+        open={Boolean(deleteOpen)}
         onOpenChange={(open) => {
           if (!open) setDeleteOpen(null);
         }}
