@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Phone, User, Stethoscope, Dot } from "lucide-react";
 import { useGetAppointmentQueueQuery } from "@/features/appointment/appointmentApiSlice";
+import NoDataFound from "@/components/layout/NoDataFound";
 
 const AppointmentQueue = () => {
   const { data, isLoading, isError } = useGetAppointmentQueueQuery({});
@@ -37,8 +38,8 @@ const AppointmentQueue = () => {
         <CardHeader>
           <CardTitle className="text-sm">Appointment Queue</CardTitle>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
-          No patients in queue.
+        <CardContent className="pt-12 pb-16">
+          <NoDataFound title="Patient in the Queue" />
         </CardContent>
       </Card>
     );

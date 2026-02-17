@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
+import { Skeleton } from "../ui/skeleton";
 import { FilterBar } from "./filter";
 import type { FilterSelect } from "./filter";
 import type { FilterDate } from "./filter";
@@ -49,6 +50,7 @@ interface DataTableProps<T> {
   totalPages: number;
   setCurrentPage: (page: number) => void;
   totalItems?: number;
+  isLoading?: boolean;
 }
 
 export function DataTable<T>({
@@ -61,7 +63,10 @@ export function DataTable<T>({
   totalPages,
   setCurrentPage,
   totalItems = 0,
+  isLoading = false,
 }: DataTableProps<T>) {
+  const skeletonRows = 6;
+
   return (
     <>
       <Card>
@@ -96,24 +101,35 @@ export function DataTable<T>({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {!totalItems && (
+              {isLoading &&
+                Array.from({ length: skeletonRows }).map((_, rowIndex) => (
+                  <TableRow key={`skeleton-row-${rowIndex}`}>
+                    {columns.map((column, colIndex) => (
+                      <TableCell key={`${String(column.accessorKey)}-${colIndex}`}>
+                        <Skeleton className="h-4 w-full max-w-[220px]" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              {!isLoading && !totalItems && (
                 <TableRow>
                   <TableCell colSpan={columns.length} className="py-14">
                     <NoDataFound />
                   </TableCell>
                 </TableRow>
               )}
-              {data.map((row, index) => (
-                <TableRow key={index}>
-                  {columns.map((column) => (
-                    <TableCell key={String(column.accessorKey)}>
-                      {column.cell
-                        ? column.cell(row)
-                        : String(row[column.accessorKey])}{" "}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
+              {!isLoading &&
+                data.map((row, index) => (
+                  <TableRow key={index}>
+                    {columns.map((column) => (
+                      <TableCell key={String(column.accessorKey)}>
+                        {column.cell
+                          ? column.cell(row)
+                          : String(row[column.accessorKey])}{" "}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
         </CardContent>

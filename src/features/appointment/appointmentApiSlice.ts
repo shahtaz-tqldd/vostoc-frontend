@@ -97,6 +97,18 @@ export const appointmentApi = createApi({
       invalidatesTags: [{ type: 'Appointment', id: 'LIST' }],
     }),
 
+    updateAppointment: builder.mutation<
+      void,
+      { appointmentId: string; payload: Partial<CreateAppointmentPayload> & { status?: string } }
+    >({
+      query: ({ appointmentId, payload }) => ({
+        url: `/appointments/${appointmentId}`,
+        method: 'PATCH',
+        body: payload,
+      }),
+      invalidatesTags: [{ type: 'Appointment', id: 'LIST' }],
+    }),
+
     deleteAppointment: builder.mutation<void, string>({
       query: (appointmentId) => ({
         url: `/appointments/${appointmentId}`,
@@ -109,6 +121,7 @@ export const appointmentApi = createApi({
 
 export const {
   useCreateAppointmentMutation,
+  useUpdateAppointmentMutation,
   useGetAppointmentsQuery,
   useLazyGetPatientByContactNumberQuery,
   useDeleteAppointmentMutation,

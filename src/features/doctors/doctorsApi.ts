@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import { getCookie } from '@/lib/cookie'
-import type { CreateDoctorPayload, DoctorDetails } from './type'
+import type { ActiveDoctor, CreateDoctorPayload, DoctorDetails, UpdateDoctorPayload } from './type'
 import type { ApiResponse } from '../base-type'
 
 export const doctorsApi = createApi({
@@ -43,6 +43,49 @@ export const doctorsApi = createApi({
       invalidatesTags: [{ type: 'Doctor', id: 'LIST' }],
     }),
 
+    updateDoctor: builder.mutation<
+      void,
+      { doctorId: string; payload: UpdateDoctorPayload }
+    >({
+      query: ({ doctorId, payload }) => {
+        const formData = new FormData()
+        if (payload.name !== undefined) {
+          formData.append('name', payload.name)
+        }
+        if (payload.username !== undefined) {
+          formData.append('username', payload.username)
+        }
+        if (payload.password !== undefined) {
+          formData.append('password', payload.password)
+        }
+        if (payload.department_id !== undefined) {
+          formData.append('department_id', payload.department_id)
+        }
+        if (payload.specialty !== undefined) {
+          formData.append('specialty', payload.specialty)
+        }
+        if (payload.contact_number !== undefined) {
+          formData.append('contact_number', payload.contact_number)
+        }
+        if (payload.description !== undefined) {
+          formData.append('description', payload.description)
+        }
+        if (payload.schedules !== undefined) {
+          formData.append('schedules', JSON.stringify(payload.schedules))
+        }
+        if (payload.image !== undefined) {
+          formData.append('image', payload.image)
+        }
+
+        return {
+          url: `/doctors/${doctorId}`,
+          method: 'PATCH',
+          body: formData,
+        }
+      },
+      invalidatesTags: [{ type: 'Doctor', id: 'LIST' }],
+    }),
+
     getDoctors: builder.query<ApiResponse<DoctorDetails[]>, void>({
       query: () => '/doctors',
       providesTags: (result) =>
@@ -56,10 +99,35 @@ export const doctorsApi = createApi({
           ]
           : [{ type: 'Doctor' as const, id: 'LIST' }],
     }),
+
+    deleteDoctor: builder.mutation<void, string>({
+      query: (doctorId) => ({
+        url: `/doctors/${doctorId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: [{ type: 'Doctor', id: 'LIST' }],
+    }),
+
+    getActiveDoctors: builder.query<ApiResponse<ActiveDoctor[]>, void>({
+      query: () => '/doctors/active/today',
+      providesTags: (result) =>
+        result
+          ? [
+            { type: 'Doctor' as const, id: 'LIST' },
+            ...result.data.map((doctor) => ({
+              type: 'Doctor' as const,
+              id: doctor.doctorId,
+            })),
+          ]
+          : [{ type: 'Doctor' as const, id: 'LIST' }],
+    }),
   }),
 })
 
 export const {
   useCreateDoctorMutation,
+  useUpdateDoctorMutation,
   useGetDoctorsQuery,
+  useDeleteDoctorMutation,
+  useGetActiveDoctorsQuery,
 } = doctorsApi

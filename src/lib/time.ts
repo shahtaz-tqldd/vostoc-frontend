@@ -1,3 +1,24 @@
+const dayLabel: Record<string, string> = {
+  SUN: "Sunday",
+  MON: "Monday",
+  TUE: "Tuesday",
+  WED: "Wednesday",
+  THU: "Thursday",
+  FRI: "Friday",
+  SAT: "Saturday",
+};
+
+export const weekDayFromCode: Record<string, string> = {
+  MON: "Mon",
+  TUE: "Tue",
+  WED: "Wed",
+  THU: "Thu",
+  FRI: "Fri",
+  SAT: "Sat",
+  SUN: "Sun",
+};
+
+
 export function formatTime12(time24: string) {
   const [h, m] = time24.split(":").map(Number);
   const ampm = h >= 12 ? "PM" : "AM";
@@ -17,3 +38,6 @@ export function formatDateForApi(date: Date) {
   const day = `${date.getDate()}`.padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
+
+
+export const formatDay = (day: string) => dayLabel[day] ?? day;

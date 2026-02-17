@@ -28,10 +28,19 @@ export type AppointmentDetails = {
   appointmentDate?: string
   appointmentTime?: string
   status?: string
+  previousAppointment?: Record<string, unknown> | null
   doctor?: {
     id: string
     name: string
     image_url?: string
+    department?: {
+      id?: string
+      name?: string
+    }
+    specialty?: {
+      id?: string
+      name?: string
+    }
   }
 }
 

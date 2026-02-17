@@ -1,3 +1,5 @@
+import type { Department } from "../department/type"
+
 export type DoctorSchedule = {
   id: string
   doctorId: string
@@ -48,4 +50,30 @@ export type CreateDoctorPayload = {
   description?: string
   schedules: DoctorScheduleEntry[]
   image?: File
+}
+
+export type UpdateDoctorPayload = {
+  name?: string
+  username?: string
+  password?: string
+  department_id?: string
+  specialty?: string
+  contact_number?: string
+  description?: string
+  schedules?: DoctorScheduleEntry[]
+  image?: File
+}
+
+export interface ActiveDoctor {
+  doctorId: string;
+  name: string;
+  profileImageUrl: string | null;
+  department: Department;
+  totalAppointments: number;
+  completedAppointments: number;
+  todaysSchedules: {
+    day: string;
+    startTime: string;
+    endTime: string;
+  }[];
 }

@@ -6,12 +6,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { doctorLoads } from "@/data/mock";
 import { cn } from "@/lib/utils";
 import AppointmentStats from "@/pages/common/components/appointment-status";
 import TodaysAppointmentList from "@/pages/common/components/todays-appointment";
+import TodaysSchedule from "./todays-schedule";
 
 export default function AdminOverviewPage() {
   return (
@@ -22,7 +21,7 @@ export default function AdminOverviewPage() {
         <DepartmentPerformance />
       </div>
       <div className="col-span-1 space-y-4">
-        <ActiveDoctorList />
+        <TodaysSchedule />
         <Notification />
         <QuickAction />
       </div>
@@ -141,38 +140,6 @@ const QuickAction = () => {
         <Button variant="ghost" className="w-full">
           View department analytics
         </Button>
-      </CardContent>
-    </Card>
-  );
-};
-
-const ActiveDoctorList = () => {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Doctor load</CardTitle>
-        <CardDescription>Slots filled, by department</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-2.5 mt-6">
-        {doctorLoads.map((doctor) => (
-          <div
-            key={doctor.name}
-            className="rounded-2xl border border-ink-200/70 bg-white/80 p-4"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold text-ink-900">
-                  {doctor.name}
-                </div>
-                <div className="text-xs text-ink-500">{doctor.department}</div>
-              </div>
-              <Badge variant="mint">{doctor.slotFill}</Badge>
-            </div>
-            <div className="mt-3 text-xs text-ink-500">
-              Next available: {doctor.nextAvailable}
-            </div>
-          </div>
-        ))}
       </CardContent>
     </Card>
   );
