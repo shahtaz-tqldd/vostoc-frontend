@@ -1,4 +1,52 @@
-export const PATIENTS = {
+export type PatientProfile = {
+  id: string;
+  name: string;
+  avatar: string;
+  age: number;
+  gender: string;
+  phone: string;
+  address: string;
+  occupation: string;
+  insurance: string;
+  bloodType: string;
+  allergies: string[];
+  chronicConditions: string[];
+  emergencyContact: { name: string; phone: string };
+  lastVisit: string;
+  vitals: {
+    bp: string;
+    pulse: number;
+    temp: string;
+    spo2: string;
+    weightKg: number;
+    heightCm: number;
+    bmi: string;
+  };
+  lifestyle: { smoking: string; alcohol: string; activity: string };
+  currentMeds: string[];
+  recentLabs: string[];
+  careFlags: string[];
+  isFollowUp: boolean;
+};
+
+export type PastVisitPrescription = {
+  medicine: string;
+  dose: string;
+  frequency: string;
+  duration: string;
+};
+
+export type PastVisit = {
+  id: string;
+  date: string;
+  chiefComplaint: string;
+  diagnosis: string;
+  prescription: PastVisitPrescription[];
+  notes: string;
+  testReports: string[];
+};
+
+export const PATIENTS: Record<string, PatientProfile> = {
   pat_1: {
     id: "pat_1",
     name: "Rahul Chakraborty",
@@ -181,7 +229,7 @@ export const PATIENTS = {
   },
 };
 
-export const PAST_VISITS = {
+export const PAST_VISITS: Record<string, PastVisit[]> = {
   pat_1: [
     {
       id: "v101",

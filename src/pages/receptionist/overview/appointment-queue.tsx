@@ -2,9 +2,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Phone, User, Stethoscope, Dot } from "lucide-react";
 import { useGetAppointmentQueueQuery } from "@/features/appointment/appointmentApiSlice";
 import NoDataFound from "@/components/layout/NoDataFound";
+import type { AppointmentQueueItem } from "@/features/appointment/type";
 
 const AppointmentQueue = () => {
-  const { data, isLoading, isError } = useGetAppointmentQueueQuery({});
+  const { data, isLoading, isError } = useGetAppointmentQueueQuery();
+  const queueData: AppointmentQueueItem[] = Array.isArray(data)
+    ? data
+    : data?.data ?? [];
 
   if (isLoading) {
     return (
@@ -32,13 +36,13 @@ const AppointmentQueue = () => {
     );
   }
 
-  if (!data?.length) {
+  if (!queueData.length) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="text-sm">Appointment Queue</CardTitle>
         </CardHeader>
-        <CardContent className="pt-12 pb-16">
+        <CardContent className="pt-12 !pb-16">
           <NoDataFound title="Patient in the Queue" />
         </CardContent>
       </Card>
@@ -47,7 +51,7 @@ const AppointmentQueue = () => {
 
   return (
     <div className="space-y-4">
-      {data?.map((queue, index) => {
+      {queueData.map((queue, index) => {
         const patient = queue.nextPatient;
         const leftForDoctor = queue.leftForDoctor ?? 0;
 

@@ -113,7 +113,7 @@ export function DataTable<T>({
                 ))}
               {!isLoading && !totalItems && (
                 <TableRow>
-                  <TableCell colSpan={columns.length} className="py-14">
+                  <TableCell colSpan={columns.length} className="!py-14">
                     <NoDataFound />
                   </TableCell>
                 </TableRow>

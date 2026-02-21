@@ -6,8 +6,8 @@ import { PATIENTS } from "../consultation/mock_data";
 import { useAppSelector } from "@/app/hooks";
 
 const DoctorsAppointmentList = () => {
-  const [selectedId] = useState(null);
-  const [filter, setFilter] = useState("all");
+  const [selectedId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<"all" | "pending" | "done">("all");
   const completedCount = TODAYS_APPOINTMENTS.filter(
     (a) => a.status === "completed",
   ).length;
@@ -78,7 +78,7 @@ const DoctorsAppointmentList = () => {
           ].map(([k, l]) => (
             <button
               key={k}
-              onClick={() => setFilter(k)}
+              onClick={() => setFilter(k as "all" | "pending" | "done")}
               className={`flex-1 text-xs font-semibold py-1.5 rounded-lg transition-all ${filter === k ? "bg-slate-800 text-white shadow-sm" : "text-gray-400 hover:bg-gray-100"}`}
             >
               {l}

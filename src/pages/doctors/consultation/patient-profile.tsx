@@ -8,12 +8,17 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { PAST_VISITS, PATIENTS } from "./mock_data";
+import type { TodaysAppointment } from "../overview/mock_data";
 
-const PatientProfile = ({ appointment }) => {
+type PatientProfileProps = {
+  appointment: TodaysAppointment;
+};
+
+const PatientProfile = ({ appointment }: PatientProfileProps) => {
   const p = PATIENTS[appointment.patientId];
   const visits = PAST_VISITS[p.id] || [];
   const [showPast, setShowPast] = useState(p.isFollowUp);
-  const [expanded, setExpanded] = useState(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   return (
     <div className="space-y-3">

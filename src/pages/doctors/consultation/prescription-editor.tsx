@@ -1,4 +1,19 @@
 import { CheckCircle2, Plus, Printer, Save, Trash2 } from "lucide-react";
+import type {
+  PrescriptionDraft,
+  PrescriptionMedicine,
+  PrescriptionStage,
+} from "./index";
+
+type PrescriptionEditorProps = {
+  prescription: PrescriptionDraft | null;
+  setPrescription: (value: PrescriptionDraft) => void;
+  stage: PrescriptionStage;
+  onSave: () => void;
+  onPrint: () => void;
+};
+
+type ListKey = "advices" | "tests";
 
 const PrescriptionEditor = ({
   prescription,
@@ -6,18 +21,22 @@ const PrescriptionEditor = ({
   stage,
   onSave,
   onPrint,
-}) => {
+}: PrescriptionEditorProps) => {
   if (!prescription) return null;
 
-  const updateMed = (i, f, v) => {
+  const updateMed = (
+    i: number,
+    f: keyof Omit<PrescriptionMedicine, "notes">,
+    v: string,
+  ) => {
     const m = [...prescription.medicines];
     m[i] = { ...m[i], [f]: v };
     setPrescription({ ...prescription, medicines: m });
   };
-  const removeMed = (i) =>
+  const removeMed = (i: number) =>
     setPrescription({
       ...prescription,
-      medicines: prescription.medicines.filter((_, j) => j !== i),
+      medicines: prescription.medicines.filter((_, j: number) => j !== i),
     });
   const addMed = () =>
     setPrescription({
@@ -28,19 +47,19 @@ const PrescriptionEditor = ({
       ],
     });
 
-  const updateListItem = (key, index, value) => {
+  const updateListItem = (key: ListKey, index: number, value: string) => {
     const list = [...prescription[key]];
     list[index] = value;
     setPrescription({ ...prescription, [key]: list });
   };
 
-  const removeListItem = (key, index) =>
+  const removeListItem = (key: ListKey, index: number) =>
     setPrescription({
       ...prescription,
-      [key]: prescription[key].filter((_, i) => i !== index),
+      [key]: prescription[key].filter((_, i: number) => i !== index),
     });
 
-  const addListItem = (key, value = "") =>
+  const addListItem = (key: ListKey, value = "") =>
     setPrescription({
       ...prescription,
       [key]: [...prescription[key], value],
@@ -103,8 +122,14 @@ const PrescriptionEditor = ({
                   <div key={f}>
                     <p className="text-xs text-gray-400 mb-0.5">{l}</p>
                     <input
-                      value={med[f]}
-                      onChange={(e) => updateMed(i, f, e.target.value)}
+                      value={med[f as keyof Omit<PrescriptionMedicine, "notes">]}
+                      onChange={(e) =>
+                        updateMed(
+                          i,
+                          f as keyof Omit<PrescriptionMedicine, "notes">,
+                          e.target.value,
+                        )
+                      }
                       className="w-full text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-400"
                     />
                   </div>

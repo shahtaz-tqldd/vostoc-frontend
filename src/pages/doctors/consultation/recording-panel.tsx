@@ -1,15 +1,22 @@
 import { Clock, Mic, Sparkles, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import type { PrescriptionStage } from "./index";
+
+type RecordingPanelProps = {
+  prescriptionStage: PrescriptionStage;
+  onGenerate: () => void;
+  onOpenPrescription: () => void;
+};
 
 const RecordingPanel = ({
   prescriptionStage,
   onGenerate,
   onOpenPrescription,
-}) => {
+}: RecordingPanelProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [transcript, setTranscript] = useState("");
-  const intervalRef = useRef(null);
+  const intervalRef = useRef<number | undefined>(undefined);
   const prevRef = useRef("");
 
   const start = () => {
@@ -19,7 +26,9 @@ const RecordingPanel = ({
   };
   const stop = () => {
     setIsRecording(false);
-    clearInterval(intervalRef.current);
+    if (intervalRef.current !== undefined) {
+      clearInterval(intervalRef.current);
+    }
     const t =
       "Patient reports persistent chest tightness especially during morning walks. Denies shortness of breath at rest. Last medication taken this morning. Blood pressure reading today shows 148 over 92. Previous ECG was normal. Patient asks about switching to a different beta blocker due to fatigue side effect.";
     setTranscript(t);
@@ -30,9 +39,16 @@ const RecordingPanel = ({
     }
   }, [transcript]);
 
-  useEffect(() => () => clearInterval(intervalRef.current), []);
+  useEffect(
+    () => () => {
+      if (intervalRef.current !== undefined) {
+        clearInterval(intervalRef.current);
+      }
+    },
+    [],
+  );
 
-  const fmt = (s) =>
+  const fmt = (s: number) =>
     `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
   return (

@@ -8,7 +8,7 @@ import {
   Play,
   Upload,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import RecordingPanel from "./recording-panel";
 import PrescriptionEditor from "./prescription-editor";
 import PatientProfile from "./patient-profile";
@@ -24,6 +24,31 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
+import type { TodaysAppointment } from "../overview/mock_data";
+
+export type PrescriptionStage =
+  | "idle"
+  | "generating"
+  | "ready"
+  | "saved"
+  | "printed";
+
+export type PrescriptionMedicine = {
+  medicine: string;
+  dose: string;
+  frequency: string;
+  duration: string;
+  notes?: string;
+};
+
+export type PrescriptionDraft = {
+  diagnosis: string;
+  medicines: PrescriptionMedicine[];
+  advices: string[];
+  tests: string[];
+  additionalInfo: string;
+  followUpDate: string;
+};
 
 const ConsultationPage = () => {
   const { patientId } = useParams();
@@ -33,12 +58,14 @@ const ConsultationPage = () => {
 
   const p = appointment ? PATIENTS[appointment.patientId] : null;
   const [started, setStarted] = useState(false);
-  const [startTime, setStartTime] = useState(null);
-  const [pStage, setPStage] = useState("idle");
-  const [prescription, setPrescription] = useState(null);
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [pStage, setPStage] = useState<PrescriptionStage>("idle");
+  const [prescription, setPrescription] = useState<PrescriptionDraft | null>(
+    null,
+  );
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selfNote, setSelfNote] = useState("");
-  const [uploads, setUploads] = useState([]);
+  const [uploads, setUploads] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
 
   const handleStart = () => {
@@ -95,12 +122,12 @@ const ConsultationPage = () => {
     }
   }, [pStage]);
 
-  const handleUpload = (e) => {
+  const handleUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
     setUploading(true);
     setTimeout(() => {
-      setUploads((prev) => [...prev, ...files.map((f) => f.name)]);
+      setUploads((prev) => [...prev, ...files.map((f: File) => f.name)]);
       setUploading(false);
     }, 800);
   };
@@ -125,7 +152,7 @@ const ConsultationPage = () => {
       <div className="p-4 md:p-8 flex flex-col h-full gap-4">
         {/* Body */}
         <div className="grid gap-4 grid grid-cols-2">
-          <PatientProfile appointment={appointment} />
+          <PatientProfile appointment={appointment as TodaysAppointment} />
 
           <div className="space-y-4">
             {!started ? (

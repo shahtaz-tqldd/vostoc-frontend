@@ -14,6 +14,7 @@ export type DoctorLoad = {
   department: string
   slotFill: string
   nextAvailable: string
+  avatar?: string
 }
 
 export type PatientRecord = {

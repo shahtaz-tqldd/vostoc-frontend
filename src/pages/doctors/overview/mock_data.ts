@@ -1,7 +1,19 @@
 import { CheckCircle2, Circle, Loader2 } from "lucide-react";
-export const APPT_COUNTS = { Mon: 7, Tue: 5, Wed: 3, Thu: 8, Fri: 4, Sat: 0, Sun: 0 };
-export const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-export const WEEKLY_SCHEDULE = {
+
+export type Weekday = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
+export type AppointmentStatus = "completed" | "in_progress" | "waiting";
+
+export const APPT_COUNTS: Record<Weekday, number> = {
+  Mon: 7,
+  Tue: 5,
+  Wed: 3,
+  Thu: 8,
+  Fri: 4,
+  Sat: 0,
+  Sun: 0,
+};
+export const DAYS: Weekday[] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+export const WEEKLY_SCHEDULE: Record<Weekday, { start: string; end: string }> = {
   Mon: { start: "09:00", end: "13:00" },
   Tue: { start: "09:00", end: "17:00" },
   Wed: { start: "09:00", end: "13:00" },
@@ -18,7 +30,17 @@ export const CURRENT_DOCTOR = {
   avatar: "AM",
 };
 
-export const TODAYS_APPOINTMENTS = [
+export type TodaysAppointment = {
+  id: string;
+  patientId: string;
+  time: string;
+  duration: number;
+  status: AppointmentStatus;
+  type: "Follow-up" | "New";
+  chief: string;
+};
+
+export const TODAYS_APPOINTMENTS: TodaysAppointment[] = [
   {
     id: "appt_1",
     patientId: "pat_1",
@@ -60,7 +82,7 @@ export const TODAYS_APPOINTMENTS = [
     patientId: "pat_5",
     time: "11:15",
     duration: 30,
-    status: "Follow-up",
+    status: "waiting",
     type: "Follow-up",
     chief: "COPD & BP review",
   },
@@ -84,7 +106,15 @@ export const TODAYS_APPOINTMENTS = [
   },
 ];
 
-export const STATUS_CFG = {
+export const STATUS_CFG: Record<
+  AppointmentStatus,
+  {
+    label: string;
+    bg: string;
+    text: string;
+    Icon: typeof CheckCircle2;
+  }
+> = {
   completed: {
     label: "Done",
     bg: "bg-emerald-100",
