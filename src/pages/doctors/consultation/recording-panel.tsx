@@ -157,7 +157,7 @@ const RecordingPanel = ({
               onClick={onOpenPrescription}
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-sm transition-all"
             >
-              <Sparkles size={14} /> Open Prescription Drawer
+              <Sparkles size={14} /> View Prescription
             </button>
           </div>
         )}

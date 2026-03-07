@@ -55,7 +55,7 @@ export default function TodaysAppointmentList() {
         contact: item.patientPhone ?? null,
         doctor: item.doctor,
         time: item.appointmentTime || "N/A",
-        status: item?.status || "unknown",
+        status: item?.appointmentStatus || "unknown",
       })),
     [data],
   );

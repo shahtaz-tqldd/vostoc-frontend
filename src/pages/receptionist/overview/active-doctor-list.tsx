@@ -1,3 +1,4 @@
+// components
 import NoDataFound from "@/components/layout/NoDataFound";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { StatusBadge } from "@/components/ui/badge";
@@ -10,13 +11,12 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
+// services
 import { useGetActiveDoctorsQuery } from "@/features/doctors/doctorsApi";
-import type { ActiveDoctor } from "@/features/doctors/type";
+import { getFillPercentage } from "@/lib/utils";
 
-function getFillPercentage(completed: number, total: number): number {
-  if (!total) return 0;
-  return Math.min(100, Math.round((completed / total) * 100));
-}
+// types
+import type { ActiveDoctor } from "@/features/doctors/type";
 
 export default function ActiveDoctorList() {
   const { data, isLoading } = useGetActiveDoctorsQuery();
@@ -95,7 +95,7 @@ export default function ActiveDoctorList() {
   );
 }
 
-function DoctorCardSkeleton() {
+const DoctorCardSkeleton = () => {
   return (
     <div className="rounded-2xl border border-ink-200/70 bg-white/80 p-4">
       <div className="flex items-start justify-between">
@@ -114,4 +114,4 @@ function DoctorCardSkeleton() {
       </div>
     </div>
   );
-}
+};

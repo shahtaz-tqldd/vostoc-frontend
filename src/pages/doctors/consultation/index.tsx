@@ -1,20 +1,10 @@
-import {
-  ArrowLeft,
-  Check,
-  CheckCircle2,
-  Clock,
-  FileText,
-  Mic,
-  Play,
-  Upload,
-} from "lucide-react";
-import { useEffect, useState, type ChangeEvent } from "react";
+import { ArrowLeft, Check, Clock } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { skipToken } from "@reduxjs/toolkit/query";
 import RecordingPanel from "./recording-panel";
 import PrescriptionEditor from "./prescription-editor";
 import PatientProfile from "./patient-profile";
-import { PATIENTS } from "./mock_data";
 import { Link, useParams } from "react-router-dom";
-import { TODAYS_APPOINTMENTS } from "../overview/mock_data";
 import { DoctorTopbar } from "@/components/layout/Topbar";
 import {
   Drawer,
@@ -24,7 +14,13 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import type { TodaysAppointment } from "../overview/mock_data";
+import {
+  useGetConsultationDataQuery,
+  useUpdateAppointmentMutation,
+} from "@/features/appointment/appointmentApiSlice";
+import type { LatestVitals } from "@/features/appointment/type";
+import PastAppointments from "./past-appointments";
+import ReportPanel from "./report-panel";
 
 export type PrescriptionStage =
   | "idle"
@@ -51,27 +47,30 @@ export type PrescriptionDraft = {
 };
 
 const ConsultationPage = () => {
-  const { patientId } = useParams();
-  const appointment = TODAYS_APPOINTMENTS.find(
-    (apt) => apt.patientId === patientId,
-  );
+  const { patientId: appointmentId } = useParams();
+  const { data } = useGetConsultationDataQuery(appointmentId ?? skipToken);
 
-  const p = appointment ? PATIENTS[appointment.patientId] : null;
-  const [started, setStarted] = useState(false);
-  const [startTime, setStartTime] = useState<Date | null>(null);
+  const currentAppointment = data?.current_appointment ?? null;
+  const pastAppointments = data?.past_appointments ?? [];
+  const [started] = useState(false);
+  const [startTime] = useState<Date | null>(null);
   const [pStage, setPStage] = useState<PrescriptionStage>("idle");
   const [prescription, setPrescription] = useState<PrescriptionDraft | null>(
     null,
   );
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selfNote, setSelfNote] = useState("");
-  const [uploads, setUploads] = useState<string[]>([]);
-  const [uploading, setUploading] = useState(false);
 
-  const handleStart = () => {
-    setStarted(true);
-    setStartTime(new Date());
-  };
+  const [latestVitalsDraft, setLatestVitalsDraft] = useState<
+    LatestVitals | Record<string, unknown> | null
+  >(null);
+  const [medicalHistoryDraft, setMedicalHistoryDraft] = useState<{
+    allergies: string[];
+    chronicConditions: string[];
+  } | null>(null);
+  const [completeError, setCompleteError] = useState("");
+  const [updateAppointment, { isLoading: isCompleting }] =
+    useUpdateAppointmentMutation();
 
   const handleGenerate = () => {
     setPStage("generating");
@@ -122,17 +121,47 @@ const ConsultationPage = () => {
     }
   }, [pStage]);
 
-  const handleUpload = (e: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (!files.length) return;
-    setUploading(true);
-    setTimeout(() => {
-      setUploads((prev) => [...prev, ...files.map((f: File) => f.name)]);
-      setUploading(false);
-    }, 800);
+  const handleCompleteAppointment = async () => {
+    if (!currentAppointment?.id) return;
+
+    setCompleteError("");
+
+    try {
+      const infoPayload: Record<string, unknown> = {};
+
+      if (latestVitalsDraft) {
+        infoPayload.vitals = latestVitalsDraft;
+      }
+
+      if (medicalHistoryDraft) {
+        infoPayload.allergies = medicalHistoryDraft.allergies;
+        infoPayload.chronic_conditions = medicalHistoryDraft.chronicConditions;
+      }
+
+      await updateAppointment({
+        appointmentId: currentAppointment.id,
+        payload: {
+          info: infoPayload,
+        },
+      }).unwrap();
+    } catch {
+      setCompleteError("Failed to save consultation updates. Please retry.");
+    }
   };
 
-  if (!appointment || !p) {
+  const normalizedPastAppointments = useMemo(
+    () =>
+      pastAppointments.map((entry, index) => ({
+        id: entry.appointment?.id ?? `${entry.date ?? "past"}-${index}`,
+        date: entry.date ?? entry.appointment?.appointmentDate,
+        appointment: entry.appointment,
+      })),
+    [pastAppointments],
+  );
+
+  const isFollowUp = normalizedPastAppointments.length > 0;
+
+  if (!currentAppointment) {
     return (
       <div className="flex-1 p-6">
         <DoctorTopbar />
@@ -149,176 +178,100 @@ const ConsultationPage = () => {
         <DoctorTopbar />
       </div>
 
-      <div className="p-4 md:p-8 flex flex-col h-full gap-4">
+      <div className="p-4 md:p-8 !pt-4 flex flex-col h-full gap-6">
         {/* Body */}
-        <div className="grid gap-4 grid grid-cols-2">
-          <PatientProfile appointment={appointment as TodaysAppointment} />
+        <div className="grid gap-5 grid grid-cols-2">
+          <div className="space-y-3">
+            <PatientProfile
+              currentAppointment={currentAppointment}
+              pastAppointments={pastAppointments}
+              onLatestVitalsChange={setLatestVitalsDraft}
+              onMedicalHistoryChange={setMedicalHistoryDraft}
+            />
+            <ReportPanel isFollowUp={isFollowUp} />
+            <PastAppointments
+              pastAppointments={pastAppointments}
+              normalizedPastAppointments={normalizedPastAppointments}
+            />
+          </div>
 
           <div className="space-y-4">
-            {!started ? (
-              <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center">
-                    <Mic size={18} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-700">
-                      Ready to consult
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      Start the session to enable recording and prescription
-                      generation.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={handleStart}
-                  className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl text-sm font-bold bg-slate-800 hover:bg-slate-700 text-white shadow-md transition-all"
-                >
-                  <Play size={15} fill="currentColor" /> Start Consultation
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 flex justify-between items-center gap-3">
-                  <Link to="/">
-                    <Button size="sm" variant="ghost">
-                      <ArrowLeft size={12} />
-                      Go Back
-                    </Button>
-                  </Link>
-                  <div className="flex items-center gap-2.5">
-                    <span
-                      className={`text-xs font-bold px-2.5 py-1 rounded-full ${pStage === "saved" || pStage === "printed" ? "bg-emerald-100 text-emerald-700" : started ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"}`}
-                    >
-                      {pStage === "saved" || pStage === "printed"
-                        ? "Completed"
-                        : started
-                          ? "In Progress"
-                          : "Not Started"}
-                    </span>
-                    {started && startTime && (
-                      <span className="flex items-center gap-1 text-xs text-gray-400">
-                        <Clock size={11} />
-                        {startTime.toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <RecordingPanel
-                  prescriptionStage={pStage}
-                  onGenerate={handleGenerate}
-                  onOpenPrescription={() => setDrawerOpen(true)}
-                />
-
-                <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-sm font-bold text-gray-700">
-                        Upload Follow-up Reports
-                      </h3>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        Upload lab or imaging reports brought by the patient.
-                      </p>
-                    </div>
-                    {uploads.length > 0 && (
-                      <span className="text-xs bg-emerald-100 text-emerald-600 border border-emerald-200 px-2 py-0.5 rounded-full font-bold">
-                        {uploads.length} files
-                      </span>
-                    )}
-                  </div>
-                  <label className="cursor-pointer block mt-3">
-                    <input
-                      type="file"
-                      multiple
-                      onChange={handleUpload}
-                      className="hidden"
-                      accept=".pdf,.jpg,.png"
-                      disabled={!p.isFollowUp}
-                    />
-                    <div
-                      className={`border-2 border-dashed rounded-xl p-4 text-center transition-colors ${p.isFollowUp ? "border-gray-200 hover:border-indigo-300" : "border-gray-100 bg-gray-50 text-gray-300"}`}
-                    >
-                      {uploading ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="w-3.5 h-3.5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
-                          <span className="text-xs text-indigo-500 font-bold">
-                            Uploading…
-                          </span>
-                        </div>
-                      ) : (
-                        <>
-                          <Upload
-                            size={18}
-                            className="mx-auto text-gray-300 mb-1"
-                          />
-                          <p className="text-xs text-gray-400">
-                            {p.isFollowUp
-                              ? "Drop PDF / Image or browse"
-                              : "Available for follow-up visits only"}
-                          </p>
-                        </>
-                      )}
-                    </div>
-                  </label>
-                  {uploads.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {uploads.map((r, i) => (
-                        <span
-                          key={i}
-                          className="flex items-center gap-1 text-xs bg-blue-50 text-blue-600 border border-blue-200 px-2 py-0.5 rounded-full"
-                        >
-                          <FileText size={10} />
-                          {r}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  {p.isFollowUp && (
-                    <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
-                      <CheckCircle2 size={12} className="text-emerald-500" />
-                      Attach reports to the patient's record for future visits.
-                    </div>
-                  )}
-                </div>
-
-                <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm font-bold text-gray-700">
-                        Self Notes
-                      </h3>
-                      <p className="text-xs text-gray-400">
-                        Private notes for the doctor only.
-                      </p>
-                    </div>
-                    <span className="text-[10px] text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">
-                      Not shared
-                    </span>
-                  </div>
-                  <textarea
-                    value={selfNote}
-                    onChange={(e) => setSelfNote(e.target.value)}
-                    className="w-full min-h-[120px] text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-indigo-400"
-                    placeholder="Add your observations, differential thoughts, or follow-up reminders..."
-                  />
-                </div>
-                <Button className="w-full">
-                  <Check size={14} />
-                  Complete & Proceed to Next Patient
+            <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 flex justify-between items-center gap-3">
+              <Link to="/">
+                <Button size="sm" variant="ghost">
+                  <ArrowLeft size={12} />
+                  Go Back
                 </Button>
-              </>
+              </Link>
+              <div className="flex items-center gap-2.5">
+                <span
+                  className={`text-xs font-bold px-2.5 py-1 rounded-full ${pStage === "saved" || pStage === "printed" ? "bg-emerald-100 text-emerald-700" : started ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"}`}
+                >
+                  {pStage === "saved" || pStage === "printed"
+                    ? "Completed"
+                    : started
+                      ? "In Progress"
+                      : "Not Started"}
+                </span>
+                {started && startTime && (
+                  <span className="flex items-center gap-1 text-xs text-gray-400">
+                    <Clock size={11} />
+                    {startTime.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <RecordingPanel
+              prescriptionStage={pStage}
+              onGenerate={handleGenerate}
+              onOpenPrescription={() => setDrawerOpen(true)}
+            />
+
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-gray-700">
+                    Self Notes
+                  </h3>
+                  <p className="text-xs text-gray-400">
+                    Private notes for the doctor only.
+                  </p>
+                </div>
+                <span className="text-[10px] text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">
+                  Not shared
+                </span>
+              </div>
+              <textarea
+                value={selfNote}
+                onChange={(e) => setSelfNote(e.target.value)}
+                className="w-full min-h-[120px] text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-indigo-400"
+                placeholder="Add your observations, differential thoughts, or follow-up reminders..."
+              />
+            </div>
+
+            {completeError && (
+              <p className="text-xs text-red-500">{completeError}</p>
             )}
+            <Button
+              className="w-full"
+              onClick={handleCompleteAppointment}
+              disabled={isCompleting}
+            >
+              <Check size={14} />
+              {isCompleting
+                ? "Saving consultation..."
+                : "Complete & Proceed to Next Patient"}
+            </Button>
           </div>
         </div>
       </div>
 
       <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <DrawerContent>
+        <DrawerContent className="h-screen overflow-y-auto">
           <DrawerHeader>
             <DrawerTitle>AI-Generated Prescription</DrawerTitle>
             <DrawerDescription>

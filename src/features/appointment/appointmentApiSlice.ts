@@ -5,7 +5,10 @@ import type {
   Appointment,
   AppointmentDetails,
   AppointmentPatientLookup,
+  AppointmentPatientLookupResponse,
   AppointmentQueueItem,
+  ConsultationData,
+  UpdateAppointmentPayload,
 } from './type'
 import type { ApiResponse } from '../base-type'
 
@@ -15,6 +18,7 @@ export type AppointmentQueryParams = {
   pageSize?: number
   search?: string
   departmentId?: string
+  status?: string
 }
 
 export const appointmentApi = createApi({
@@ -68,7 +72,7 @@ export const appointmentApi = createApi({
     }),
 
     getPatientByContactNumber: builder.query<
-      AppointmentPatientLookup,
+      AppointmentPatientLookup | AppointmentPatientLookupResponse | ApiResponse<AppointmentPatientLookup | AppointmentPatientLookupResponse>,
       string
     >({
       query: (contactNumber) =>
@@ -99,7 +103,7 @@ export const appointmentApi = createApi({
 
     updateAppointment: builder.mutation<
       void,
-      { appointmentId: string; payload: Partial<CreateAppointmentPayload> & { status?: string } }
+      { appointmentId: string; payload: UpdateAppointmentPayload }
     >({
       query: ({ appointmentId, payload }) => ({
         url: `/appointments/${appointmentId}`,
@@ -116,6 +120,39 @@ export const appointmentApi = createApi({
       }),
       invalidatesTags: [{ type: 'Appointment', id: 'LIST' }],
     }),
+
+    // doctors
+    getMyAppointments: builder.query<
+      ApiResponse<AppointmentDetails[]>,
+      AppointmentQueryParams | void
+    >({
+      query: (params) => {
+        const searchParams = new URLSearchParams()
+
+        if (params?.status) {
+          searchParams.set('status', params.status)
+        }
+
+        const queryString = searchParams.toString()
+        return queryString ? `/doctors/appointments/today?${queryString}` : '/doctors/appointments/today'
+      },
+      providesTags: (result) =>
+        result
+          ? [
+            { type: 'Appointment' as const, id: 'LIST' },
+            ...result.data.map((dept) => ({
+              type: 'Appointment' as const,
+              id: dept.id,
+            })),
+          ]
+          : [{ type: 'Appointment' as const, id: 'LIST' }],
+    }),
+
+    getConsultationData: builder.query<ConsultationData, string | undefined>({
+      query: (appointmentId) => {
+        return `/appointments/${appointmentId}`
+      }
+    }),
   }),
 })
 
@@ -126,5 +163,7 @@ export const {
   useLazyGetPatientByContactNumberQuery,
   useDeleteAppointmentMutation,
   useGetStatsQuery,
-  useGetAppointmentQueueQuery
+  useGetAppointmentQueueQuery,
+  useGetMyAppointmentsQuery,
+  useGetConsultationDataQuery
 } = appointmentApi

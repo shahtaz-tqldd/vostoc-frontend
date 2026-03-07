@@ -90,7 +90,7 @@ const AppointmentQueue = () => {
                   </span>
                 </div>
 
-                <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+                <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
                   <p className="text-sm font-semibold text-gray-900">
                     {patient.name || "Unknown patient"}
                   </p>

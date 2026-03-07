@@ -1,84 +1,125 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { DataTable, type ColumnDef } from "@/components/table";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/badge";
+import { useGetDoctorsPatientListQuery } from "@/features/doctors/doctorsApi";
+import type { DoctorPatient } from "@/features/doctors/type";
+import moment from "moment";
 
 type Patient = {
   id: string;
   name: string;
   age: number;
+  gender: string;
+  patientPhone: string;
   lastVisit: string;
   condition: string;
-  status: "Active" | "Discharged" | "Follow-up";
+  status: string;
 };
-
-// --- Mock patient data ---
-const mockPatients: Patient[] = Array.from({ length: 55 }, (_, i) => ({
-  id: `PT-${2000 + i}`,
-  name: `Patient ${i + 1}`,
-  age: 20 + (i % 40),
-  lastVisit: `${10 + (i % 15)} Jan 2026`,
-  condition: ["Diabetes", "Hypertension", "Flu", "Asthma"][i % 4],
-  status: ["Active", "Discharged", "Follow-up"][i % 3] as Patient["status"],
-}));
 
 // --- Table columns ---
 const patientColumns: ColumnDef<Patient>[] = [
   {
-    header: "Patient ID",
-    accessorKey: "id",
-  },
-  {
     header: "Patient Name",
     accessorKey: "name",
+    cell: (row) => {
+      return (
+        <div>
+          <h2>{row.name}</h2>
+          <p className="text-xs opacity-60">
+            Age: {row.age || "N/A"} • {row.gender || "N/A"}
+          </p>
+        </div>
+      );
+    },
   },
   {
-    header: "Age",
-    accessorKey: "age",
+    header: "Contact",
+    accessorKey: "patientPhone",
+    cell: (row) => row.patientPhone || "N/A",
   },
+
   {
     header: "Last Visit",
     accessorKey: "lastVisit",
+    cell: (row) => {
+      const visitTime = moment(row.lastVisit, "YYYY-MM-DD HH:mm", true);
+      return visitTime.isValid()
+        ? visitTime.format("MMM D, YYYY • h:mm A")
+        : "N/A";
+    },
   },
-  {
-    header: "Condition",
-    accessorKey: "condition",
-  },
+  { header: "Condition", accessorKey: "condition" },
   {
     header: "Status",
     accessorKey: "status",
     cell: (row) => {
-      const status = row.status;
-      const variant = {
-        Active: "mint",
-        Discharged: "ink",
-        "Follow-up": "coral",
-      }[status] as "mint" | "ink" | "coral";
+      const statusToVariant = {
+        active: "success",
+        "follow-up": "pending",
+        discharged: "failed",
+      } as const;
+      const normalizedStatus = row.status.toLowerCase();
+      const variant =
+        statusToVariant[normalizedStatus as keyof typeof statusToVariant] ??
+        "disabled";
 
-      return <Badge variant={variant}>{status}</Badge>;
+      return <StatusBadge status={variant} label={toStatusLabel(row.status)} />;
     },
   },
 ];
 
+function toStatusLabel(status: string) {
+  if (!status) return "Unknown";
+  return status
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function phoneToId(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  return `PT-${digits.slice(-6) || "000000"}`;
+}
+
 const MyPatientList = () => {
   const [search, setSearch] = useState("");
-  const itemsPerPage = 5;
+  const [status, setStatus] = useState("");
+  const itemsPerPage = 20;
   const [currentPage, setCurrentPage] = useState(1);
 
-  const filteredPatients = mockPatients.filter((patient) =>
-    patient.name.toLowerCase().includes(search.toLowerCase()),
-  );
+  const { data, isLoading, isFetching } = useGetDoctorsPatientListQuery({
+    page: currentPage,
+    pageSize: itemsPerPage,
+    search: search || undefined,
+    status: status || undefined,
+  });
 
-  const totalPages = Math.ceil(filteredPatients.length / itemsPerPage);
-  const paginatedData = filteredPatients.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
-  );
+  const mappedPatients = useMemo<Patient[]>(() => {
+    const list = data?.data ?? [];
+
+    return list.map((p: DoctorPatient) => ({
+      id: phoneToId(p.patientPhone),
+      name: p.name,
+      age: p.age,
+      gender: p.gender,
+      patientPhone: p.patientPhone,
+      lastVisit: p.lastVisit,
+      condition:
+        p.conditions && p.conditions.length > 0 ? p.conditions[0] : "—",
+      status: p.status,
+    }));
+  }, [data?.data]);
+
+  // Pagination Data
+  const totalItems = data?.meta?.total ?? mappedPatients.length;
+  const pageSize = data?.meta?.pageSize ?? itemsPerPage;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
   return (
     <DataTable<Patient>
       title="My Patients"
-      description="Patients currently under your care and recent follow-ups."
-      data={paginatedData}
+      description="Patient records from your current roster"
+      data={mappedPatients}
       columns={patientColumns}
       currentPage={currentPage}
       totalPages={totalPages}
@@ -87,10 +128,32 @@ const MyPatientList = () => {
         search: {
           value: search,
           placeholder: "Search patient by name",
-          onChange: setSearch,
+          onChange: (v: string) => {
+            setSearch(v);
+            setCurrentPage(1);
+          },
         },
+        selects: [
+          {
+            id: "status",
+            value: status,
+            placeholder: "Status",
+            options: [
+              { label: "All Statuses", value: "" },
+              { label: "Active", value: "active" },
+              { label: "Discharged", value: "discharged" },
+              { label: "Follow Up", value: "follow-up" },
+            ],
+            onChange: (value: string) => {
+              setStatus(value);
+              setCurrentPage(1);
+            },
+            widthClassName: "!min-w-[120px] max-w-fit",
+          },
+        ],
       }}
-      totalItems={paginatedData?.length}
+      totalItems={totalItems}
+      isLoading={isLoading || isFetching}
     />
   );
 };

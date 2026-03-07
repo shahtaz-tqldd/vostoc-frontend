@@ -77,3 +77,32 @@ export interface ActiveDoctor {
     endTime: string;
   }[];
 }
+
+
+export interface WeeklySchedule {
+  date: string;
+  totalAppointments: number;
+  isToday: boolean;
+  isOff: boolean;
+  schedules: {
+    start: string;
+    end: string;
+  }[];
+}
+
+export interface DoctorPatient {
+  patientPhone: string;
+  name: string;
+  age: number;
+  gender: string;
+  lastVisit: string;
+  conditions: string[];
+  status: string;
+}
+
+export type DoctorPatientListQueryParams = {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  status?: string;
+}

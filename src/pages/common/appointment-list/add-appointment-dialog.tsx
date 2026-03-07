@@ -37,7 +37,10 @@ import {
   useCreateAppointmentMutation,
   useLazyGetPatientByContactNumberQuery,
 } from "@/features/appointment/appointmentApiSlice";
-import type { AppointmentPatientLookup } from "@/features/appointment/type";
+import type {
+  AppointmentPatientLookup,
+  AppointmentPatientLookupResponse,
+} from "@/features/appointment/type";
 
 type SelectOption = {
   label: string;
@@ -115,6 +118,48 @@ function formatTimeLabel(value: string) {
   return `${normalizedHour}:${`${mins}`.padStart(2, "0")} ${suffix}`;
 }
 
+function getLookupPatients(
+  payload: unknown,
+): AppointmentPatientLookup[] {
+  if (!payload || typeof payload !== "object") return [];
+
+  const source = payload as {
+    data?: unknown;
+    patients?: unknown;
+  };
+
+  const nestedSource =
+    source.data && typeof source.data === "object"
+      ? (source.data as AppointmentPatientLookupResponse)
+      : null;
+
+  const patients =
+    (Array.isArray(source.patients) ? source.patients : null) ??
+    (nestedSource && Array.isArray(nestedSource.patients)
+      ? nestedSource.patients
+      : null);
+
+  if (patients) {
+    return patients.filter(
+      (patient): patient is AppointmentPatientLookup =>
+        Boolean(patient && typeof patient === "object"),
+    );
+  }
+
+  if (nestedSource) {
+    return [nestedSource as AppointmentPatientLookup];
+  }
+
+  return [payload as AppointmentPatientLookup];
+}
+
+function getPatientOptionValue(
+  patient: AppointmentPatientLookup,
+  index: number,
+) {
+  return patient.patientId ?? `patient-${index}`;
+}
+
 export default function AppointmentBookingDialog({
   open,
   onOpenChange,
@@ -142,7 +187,46 @@ export default function AppointmentBookingDialog({
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const { data: doctors } = useGetDoctorsQuery();
+  const [matchedPatients, setMatchedPatients] = useState<
+    AppointmentPatientLookup[]
+  >([]);
+  const [selectedMatchedPatientId, setSelectedMatchedPatientId] = useState("");
+  const [isAddingNewPatient, setIsAddingNewPatient] = useState(false);
   const [triggerPatientLookup] = useLazyGetPatientByContactNumberQuery();
+
+  const applyPatientLookup = useCallback(
+    (patient: AppointmentPatientLookup | null) => {
+      if (!patient) {
+        setPatientName("");
+        setPatientAge("");
+        setPatientGender("");
+        setDepartment("");
+        setDoctorId("");
+        setAppointmentDate("");
+        setAppointmentTime("");
+        return;
+      }
+
+      setPatientName(patient.patientName ?? "");
+      setPatientAge(
+        patient.patientAge !== undefined ? `${patient.patientAge}` : "",
+      );
+      setPatientGender(
+        patient.patientGender === "Male" ||
+          patient.patientGender === "Female" ||
+          patient.patientGender === "Other"
+          ? patient.patientGender
+          : "",
+      );
+
+      const nextDepartment = patient.departmentId || patient.department;
+      setDepartment(nextDepartment ?? "");
+      setDoctorId(patient.doctorId ?? "");
+      setAppointmentDate("");
+      setAppointmentTime("");
+    },
+    [],
+  );
 
   const filteredDoctors = useMemo(() => {
     if (!department) return [];
@@ -281,37 +365,48 @@ export default function AppointmentBookingDialog({
   }, [patientPhoneDigits]);
 
   useEffect(() => {
-    if (patientLocalDigits.length < 7) return;
+    if (patientLocalDigits.length < 7) {
+      setMatchedPatients([]);
+      setSelectedMatchedPatientId("");
+      return;
+    }
 
     const timer = window.setTimeout(async () => {
       try {
         const data = await triggerPatientLookup(patientPhone.trim()).unwrap();
         if (!data) return;
 
-        const resolvedPatient = (
-          "data" in data && data.data ? data.data : data
-        ) as AppointmentPatientLookup;
-
-        if (resolvedPatient.patientName) {
-          setPatientName(resolvedPatient.patientName);
+        const resolvedPatients = getLookupPatients(data);
+        if (resolvedPatients.length === 0) {
+          setMatchedPatients([]);
+          setSelectedMatchedPatientId("");
+          setIsAddingNewPatient(false);
+          return;
         }
 
-        const nextDepartment =
-          resolvedPatient.departmentId || resolvedPatient.department;
-        if (nextDepartment) {
-          setDepartment(nextDepartment);
+        if (resolvedPatients.length === 1) {
+          const resolvedPatient = resolvedPatients[0];
+          setMatchedPatients([]);
+          setSelectedMatchedPatientId("");
+          setIsAddingNewPatient(false);
+          applyPatientLookup(resolvedPatient);
+          return;
         }
 
-        if (resolvedPatient.doctorId) {
-          setDoctorId(resolvedPatient.doctorId);
-        }
+        setMatchedPatients(resolvedPatients);
+        setSelectedMatchedPatientId("");
+        setIsAddingNewPatient(false);
+        applyPatientLookup(null);
       } catch {
+        setMatchedPatients([]);
+        setSelectedMatchedPatientId("");
+        setIsAddingNewPatient(false);
         // Ignore lookup failures and allow manual entry.
       }
     }, 500);
 
     return () => window.clearTimeout(timer);
-  }, [patientLocalDigits, patientPhone, triggerPatientLookup]);
+  }, [applyPatientLookup, patientLocalDigits, patientPhone, triggerPatientLookup]);
 
   const isSelectedDateValid = useMemo(() => {
     if (!selectedDateObject) return false;
@@ -351,6 +446,9 @@ export default function AppointmentBookingDialog({
     setPatientPhone(DEFAULT_PHONE_PREFIX);
     setPatientAge("");
     setPatientGender("");
+    setMatchedPatients([]);
+    setSelectedMatchedPatientId("");
+    setIsAddingNewPatient(false);
     setPatientNotes("");
     setDepartment("");
     setDoctorId("");
@@ -371,6 +469,19 @@ export default function AppointmentBookingDialog({
 
     setPatientPhone(`+${normalizedDigits}`);
   };
+
+  const matchedPatientLabel = useMemo(() => {
+    if (!matchedPatients.length) return "Select patient";
+    if (!selectedMatchedPatientId) return "Select patient";
+
+    const selected = matchedPatients.find(
+      (patient, index) =>
+        getPatientOptionValue(patient, index) === selectedMatchedPatientId,
+    );
+    if (!selected?.patientName) return "Select patient";
+
+    return selected.patientName;
+  }, [matchedPatients, selectedMatchedPatientId]);
 
   const [createAppointment, { isLoading: appointmentCreateLoading }] =
     useCreateAppointmentMutation();
@@ -417,12 +528,76 @@ export default function AppointmentBookingDialog({
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Patient name</label>
-                  <Input
-                    value={patientName}
-                    onChange={(e) => setPatientName(e.target.value)}
-                    placeholder="Full name"
-                    disabled={isLoading}
-                  />
+                  {matchedPatients.length > 1 && !isAddingNewPatient ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={isLoading}
+                          className="h-10 w-full justify-between rounded-xl bg-white px-3 font-normal"
+                        >
+                          <span className="truncate">{matchedPatientLabel}</span>
+                          <ChevronDown className="h-4 w-4 opacity-60" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="start"
+                        className="w-[var(--radix-dropdown-menu-trigger-width)]"
+                      >
+                        <DropdownMenuRadioGroup
+                          value={selectedMatchedPatientId || "__none"}
+                          onValueChange={(value) => {
+                            if (value === "__new") {
+                              setSelectedMatchedPatientId("");
+                              setIsAddingNewPatient(true);
+                              applyPatientLookup(null);
+                              return;
+                            }
+
+                            if (value === "__none") {
+                              setSelectedMatchedPatientId("");
+                              setIsAddingNewPatient(false);
+                              applyPatientLookup(null);
+                              return;
+                            }
+
+                            const selectedPatient = matchedPatients.find(
+                              (patient, index) =>
+                                getPatientOptionValue(patient, index) === value,
+                            );
+                            if (!selectedPatient) return;
+
+                            setSelectedMatchedPatientId(value);
+                            setIsAddingNewPatient(false);
+                            applyPatientLookup(selectedPatient);
+                          }}
+                        >
+                          <DropdownMenuRadioItem value="__new">
+                            Add new patient
+                          </DropdownMenuRadioItem>
+                          <DropdownMenuRadioItem value="__none">
+                            Unselect
+                          </DropdownMenuRadioItem>
+                          {matchedPatients.map((patient, index) => (
+                            <DropdownMenuRadioItem
+                              key={getPatientOptionValue(patient, index)}
+                              value={getPatientOptionValue(patient, index)}
+                            >
+                              {patient.patientName ?? `Patient ${index + 1}`}
+                            </DropdownMenuRadioItem>
+                          ))}
+                        </DropdownMenuRadioGroup>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    <Input
+                      value={patientName}
+                      onChange={(e) => setPatientName(e.target.value)}
+                      placeholder="Full name"
+                      disabled={isLoading}
+                    />
+                  )}
                 </div>
 
                 <div className="space-y-2">

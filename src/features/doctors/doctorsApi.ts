@@ -1,6 +1,14 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import { getCookie } from '@/lib/cookie'
-import type { ActiveDoctor, CreateDoctorPayload, DoctorDetails, UpdateDoctorPayload } from './type'
+import type {
+  ActiveDoctor,
+  CreateDoctorPayload,
+  DoctorDetails,
+  DoctorPatient,
+  DoctorPatientListQueryParams,
+  UpdateDoctorPayload,
+  WeeklySchedule
+} from './type'
 import type { ApiResponse } from '../base-type'
 
 export const doctorsApi = createApi({
@@ -121,6 +129,38 @@ export const doctorsApi = createApi({
           ]
           : [{ type: 'Doctor' as const, id: 'LIST' }],
     }),
+
+    // doctor specifc apis
+    getWeeklySchedules: builder.query<ApiResponse<WeeklySchedule[]>, void>({
+      query: () => '/doctors/schedules/weekly'
+    }),
+
+    getDoctorsPatientList: builder.query<
+      ApiResponse<DoctorPatient[]>,
+      DoctorPatientListQueryParams | void
+    >({
+      query: (params) => {
+        const searchParams = new URLSearchParams()
+
+        if (params?.page) {
+          searchParams.set('page', params.page.toString())
+        }
+        if (params?.pageSize) {
+          searchParams.set('pageSize', params.pageSize.toString())
+        }
+        if (params?.search) {
+          searchParams.set('search', params.search)
+        }
+        if (params?.status) {
+          searchParams.set('status', params.status)
+        }
+
+        const queryString = searchParams.toString()
+        return queryString ? `/doctors/patients?${queryString}` : '/doctors/patients'
+      }
+    }),
+
+
   }),
 })
 
@@ -130,4 +170,6 @@ export const {
   useGetDoctorsQuery,
   useDeleteDoctorMutation,
   useGetActiveDoctorsQuery,
+  useGetWeeklySchedulesQuery,
+  useGetDoctorsPatientListQuery
 } = doctorsApi
