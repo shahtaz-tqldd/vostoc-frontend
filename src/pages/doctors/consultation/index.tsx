@@ -2,49 +2,171 @@ import { ArrowLeft, Check, Clock } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { skipToken } from "@reduxjs/toolkit/query";
 import RecordingPanel from "./recording-panel";
-import PrescriptionEditor from "./prescription-editor";
 import PatientProfile from "./patient-profile";
 import { Link, useParams } from "react-router-dom";
 import { DoctorTopbar } from "@/components/layout/Topbar";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import {
   useGetConsultationDataQuery,
-  useUpdateAppointmentMutation,
+  useCompleteConsultationMutation,
 } from "@/features/appointment/appointmentApiSlice";
-import type { LatestVitals } from "@/features/appointment/type";
+import type {
+  ConsultationAppointment,
+  LatestVitals,
+} from "@/features/appointment/type";
 import PastAppointments from "./past-appointments";
 import ReportPanel from "./report-panel";
+import PrescriptionDrawer from "./prescription-drawer";
+import type { PrescriptionDraft, PrescriptionStage } from "./type";
 
-export type PrescriptionStage =
-  | "idle"
-  | "generating"
-  | "ready"
-  | "saved"
-  | "printed";
+function parseUnknownObject(value: unknown): Record<string, unknown> {
+  if (!value) return {};
 
-export type PrescriptionMedicine = {
-  medicine: string;
-  dose: string;
-  frequency: string;
-  duration: string;
-  notes?: string;
-};
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      if (parsed && typeof parsed === "object") {
+        return parsed as Record<string, unknown>;
+      }
+      return {};
+    } catch {
+      return {};
+    }
+  }
 
-export type PrescriptionDraft = {
-  diagnosis: string;
-  medicines: PrescriptionMedicine[];
-  advices: string[];
-  tests: string[];
-  additionalInfo: string;
-  followUpDate: string;
-};
+  if (typeof value === "object") {
+    return value as Record<string, unknown>;
+  }
+
+  return {};
+}
+
+function findValueByAliases(
+  source: Record<string, unknown>,
+  aliases: string[],
+): unknown {
+  for (const alias of aliases) {
+    const direct = source[alias];
+    if (direct !== undefined && direct !== null) return direct;
+
+    const foundKey = Object.keys(source).find(
+      (item) => item.toLowerCase() === alias.toLowerCase(),
+    );
+    if (foundKey) return source[foundKey];
+  }
+
+  return undefined;
+}
+
+function toStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => String(item).trim())
+      .filter((item) => item.length > 0);
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+    try {
+      const parsed = JSON.parse(trimmed) as unknown;
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((item) => String(item).trim())
+          .filter((item) => item.length > 0);
+      }
+    } catch {
+      // Fallback to separator parsing.
+    }
+
+    return trimmed
+      .split(/[\n,]/)
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+  }
+
+  return [];
+}
+
+function toUniqueStrings(values: string[]) {
+  const deduped = new Set<string>();
+
+  values.forEach((item) => {
+    const normalized = item.trim();
+    if (!normalized) return;
+    const hasSame = [...deduped].some(
+      (existing) => existing.toLowerCase() === normalized.toLowerCase(),
+    );
+    if (!hasSame) deduped.add(normalized);
+  });
+
+  return [...deduped];
+}
+
+function toComparableArray(values: string[]) {
+  return toUniqueStrings(values)
+    .map((item) => item.toLowerCase())
+    .sort();
+}
+
+function areStringArraysEqual(a: string[], b: string[]) {
+  const left = toComparableArray(a);
+  const right = toComparableArray(b);
+  if (left.length !== right.length) return false;
+  return left.every((item, index) => item === right[index]);
+}
+
+function getExistingMedicalHistory(appointment: ConsultationAppointment) {
+  const appointmentData = parseUnknownObject(appointment);
+  const info = parseUnknownObject(appointment.info);
+
+  const allergiesRaw =
+    findValueByAliases(appointmentData, ["allergies"]) ??
+    findValueByAliases(info, ["allergies"]);
+  const chronicConditionsRaw =
+    findValueByAliases(appointmentData, [
+      "chronicConditions",
+      "chronic_conditions",
+    ]) ?? findValueByAliases(info, ["chronicConditions", "chronic_conditions"]);
+
+  return {
+    allergies: toUniqueStrings(toStringArray(allergiesRaw)),
+    chronicConditions: toUniqueStrings(toStringArray(chronicConditionsRaw)),
+  };
+}
+
+function getInfoString(
+  appointment: ConsultationAppointment,
+  aliases: string[],
+): string {
+  const appointmentData = parseUnknownObject(appointment);
+  const info = parseUnknownObject(appointment.info);
+  const value =
+    findValueByAliases(appointmentData, aliases) ??
+    findValueByAliases(info, aliases);
+  return value === undefined || value === null ? "" : String(value);
+}
+
+function getChangedVitals(
+  existing: unknown,
+  draft: LatestVitals | Record<string, unknown> | null,
+) {
+  if (!draft) return null;
+
+  const previous = parseUnknownObject(existing);
+  const next = parseUnknownObject(draft);
+  const changed: Record<string, unknown> = {};
+
+  Object.keys(next).forEach((key) => {
+    const prevValue = previous[key] ?? null;
+    const nextValue = next[key] ?? null;
+    if (prevValue !== nextValue) {
+      changed[key] = nextValue;
+    }
+  });
+
+  return Object.keys(changed).length > 0 ? changed : null;
+}
 
 const ConsultationPage = () => {
   const { patientId: appointmentId } = useParams();
@@ -59,7 +181,9 @@ const ConsultationPage = () => {
     null,
   );
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [diagnosis, setDiagnosis] = useState("");
   const [selfNote, setSelfNote] = useState("");
+  const [uploadedReportsDraft, setUploadedReportsDraft] = useState<File[]>([]);
 
   const [latestVitalsDraft, setLatestVitalsDraft] = useState<
     LatestVitals | Record<string, unknown> | null
@@ -69,15 +193,16 @@ const ConsultationPage = () => {
     chronicConditions: string[];
   } | null>(null);
   const [completeError, setCompleteError] = useState("");
-  const [updateAppointment, { isLoading: isCompleting }] =
-    useUpdateAppointmentMutation();
+  const [completeConsultation, { isLoading: isCompleting }] =
+    useCompleteConsultationMutation();
 
   const handleGenerate = () => {
     setPStage("generating");
     setTimeout(() => {
+      setDiagnosis(
+        "Stable Angina - mild exacerbation with orthostatic component",
+      );
       setPrescription({
-        diagnosis:
-          "Stable Angina — mild exacerbation with orthostatic component",
         medicines: [
           {
             medicine: "Atenolol",
@@ -121,28 +246,121 @@ const ConsultationPage = () => {
     }
   }, [pStage]);
 
+  useEffect(() => {
+    if (!currentAppointment) return;
+
+    setDiagnosis(getInfoString(currentAppointment, ["diagnosis"]));
+    setSelfNote(
+      getInfoString(currentAppointment, [
+        "self_notes",
+        "selfNote",
+        "self_note",
+      ]),
+    );
+  }, [currentAppointment]);
+
   const handleCompleteAppointment = async () => {
     if (!currentAppointment?.id) return;
 
     setCompleteError("");
 
     try {
-      const infoPayload: Record<string, unknown> = {};
+      const formData = new FormData();
+      let hasChanges = false;
 
-      if (latestVitalsDraft) {
-        infoPayload.vitals = latestVitalsDraft;
+      const changedVitals = getChangedVitals(
+        currentAppointment.latest_vitals,
+        latestVitalsDraft,
+      );
+      if (currentAppointment.patientId) {
+        formData.append("patient_id", JSON.stringify(currentAppointment.patientId));
+      }
+      if (changedVitals) {
+        formData.append("vitals", JSON.stringify(changedVitals));
+        hasChanges = true;
       }
 
       if (medicalHistoryDraft) {
-        infoPayload.allergies = medicalHistoryDraft.allergies;
-        infoPayload.chronic_conditions = medicalHistoryDraft.chronicConditions;
+        const existingHistory = getExistingMedicalHistory(currentAppointment);
+        const nextAllergies = toUniqueStrings(medicalHistoryDraft.allergies);
+        const nextChronicConditions = toUniqueStrings(
+          medicalHistoryDraft.chronicConditions,
+        );
+
+        if (!areStringArraysEqual(existingHistory.allergies, nextAllergies)) {
+          formData.append("allergies", JSON.stringify(nextAllergies));
+          hasChanges = true;
+        }
+        if (
+          !areStringArraysEqual(
+            existingHistory.chronicConditions,
+            nextChronicConditions,
+          )
+        ) {
+          formData.append(
+            "chronic_conditions",
+            JSON.stringify(nextChronicConditions),
+          );
+          hasChanges = true;
+        }
       }
 
-      await updateAppointment({
+      uploadedReportsDraft.forEach((file) => {
+        formData.append("reports", file);
+      });
+      if (uploadedReportsDraft.length > 0) {
+        hasChanges = true;
+      }
+
+      const existingDiagnosis = getInfoString(currentAppointment, [
+        "diagnosis",
+      ]);
+      if (diagnosis.trim() !== existingDiagnosis.trim()) {
+        formData.append("diagnosis", diagnosis.trim());
+        hasChanges = true;
+      }
+
+      const existingSelfNote = getInfoString(currentAppointment, [
+        "self_notes",
+        "selfNote",
+        "self_note",
+      ]);
+      if (selfNote.trim() !== existingSelfNote.trim()) {
+        formData.append("self_notes", selfNote.trim());
+        hasChanges = true;
+      }
+
+      if (prescription) {
+        const prescriptionPayload = {
+          advices: prescription.advices
+            .map((item) => item.trim())
+            .filter((item) => item.length > 0),
+          medicines: prescription.medicines
+            .map((medicine) => ({
+              medicine: medicine.medicine.trim(),
+              dose: medicine.dose.trim(),
+              frequency: medicine.frequency.trim(),
+              duration: medicine.duration.trim(),
+              notes: medicine.notes.trim(),
+            }))
+            .filter((medicine) => medicine.medicine.length > 0),
+          tests: prescription.tests
+            .map((item) => item.trim())
+            .filter((item) => item.length > 0),
+          additional_info: prescription.additionalInfo.trim(),
+          follow_up_date: prescription.followUpDate || null,
+        };
+        formData.append("prescription", JSON.stringify(prescriptionPayload));
+        hasChanges = true;
+      }
+
+      if (!hasChanges) {
+        return;
+      }
+
+      await completeConsultation({
         appointmentId: currentAppointment.id,
-        payload: {
-          info: infoPayload,
-        },
+        payload: formData,
       }).unwrap();
     } catch {
       setCompleteError("Failed to save consultation updates. Please retry.");
@@ -188,7 +406,10 @@ const ConsultationPage = () => {
               onLatestVitalsChange={setLatestVitalsDraft}
               onMedicalHistoryChange={setMedicalHistoryDraft}
             />
-            <ReportPanel isFollowUp={isFollowUp} />
+            <ReportPanel
+              isFollowUp={isFollowUp}
+              onUploadsChange={setUploadedReportsDraft}
+            />
             <PastAppointments
               pastAppointments={pastAppointments}
               normalizedPastAppointments={normalizedPastAppointments}
@@ -232,6 +453,16 @@ const ConsultationPage = () => {
             />
 
             <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+              <div>
+                <h3 className="text-sm font-bold text-gray-700">Diagnosis</h3>
+                <textarea
+                  value={diagnosis}
+                  onChange={(e) => setDiagnosis(e.target.value)}
+                  className="w-full mt-1 min-h-[84px] text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-indigo-400"
+                  placeholder="Primary diagnosis and clinical impression..."
+                />
+              </div>
+
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-bold text-gray-700">
@@ -270,35 +501,14 @@ const ConsultationPage = () => {
         </div>
       </div>
 
-      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <DrawerContent className="h-screen overflow-y-auto">
-          <DrawerHeader>
-            <DrawerTitle>AI-Generated Prescription</DrawerTitle>
-            <DrawerDescription>
-              Review, edit, and finalize the prescription before saving.
-            </DrawerDescription>
-          </DrawerHeader>
-          <div className="mt-4 border border-slate-200 rounded-2xl p-4 bg-white">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                Draft Status
-              </span>
-              <span
-                className={`text-xs font-bold px-2.5 py-1 rounded-full ${pStage === "saved" || pStage === "printed" ? "bg-emerald-100 text-emerald-700 border border-emerald-200" : "bg-indigo-50 text-indigo-600 border border-indigo-200"}`}
-              >
-                {pStage === "saved" || pStage === "printed" ? "Saved" : "Draft"}
-              </span>
-            </div>
-            <PrescriptionEditor
-              prescription={prescription}
-              setPrescription={setPrescription}
-              stage={pStage}
-              onSave={() => setPStage("saved")}
-              onPrint={() => setPStage("printed")}
-            />
-          </div>
-        </DrawerContent>
-      </Drawer>
+      <PrescriptionDrawer
+        open={drawerOpen}
+        setOpen={setDrawerOpen}
+        pStage={pStage}
+        setPStage={setPStage}
+        prescription={prescription}
+        setPrescription={setPrescription}
+      />
     </div>
   );
 };

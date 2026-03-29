@@ -1,6 +1,6 @@
 import { Clock, Mic, Sparkles, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import type { PrescriptionStage } from "./index";
+import type { PrescriptionStage } from "./type";
 
 type RecordingPanelProps = {
   prescriptionStage: PrescriptionStage;

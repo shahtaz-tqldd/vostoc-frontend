@@ -26,8 +26,8 @@ function statusPill(consultationStatus: string, appointmentStatus: string) {
   const cs = (consultationStatus || "").toLowerCase();
   const as = (appointmentStatus || "").toLowerCase();
 
-  if (cs === "done" || cs === "completed") {
-    return { label: "Done", bg: "bg-gray-100", text: "text-gray-500" };
+  if (cs === "done" || cs === "complete") {
+    return { label: "Done", bg: "bg-green-100", text: "text-green-700" };
   }
 
   if (cs === "in_progress") {
@@ -39,7 +39,7 @@ function statusPill(consultationStatus: string, appointmentStatus: string) {
   }
 
   // default
-  return { label: "Pending", bg: "bg-teal-50", text: "text-teal-700" };
+  return { label: "Pending", bg: "bg-orange-100", text: "text-orange-700" };
 }
 
 function initials(name: string) {
@@ -61,6 +61,7 @@ const DoctorsAppointmentList = () => {
 
   const navigate = useNavigate();
   const me = useAppSelector((state) => state.auth.me);
+  console.log((me))
   const doctorName = me?.name ?? CURRENT_DOCTOR.name;
 
   const api = (data as ApiResponse | undefined) ?? undefined;
@@ -69,7 +70,7 @@ const DoctorsAppointmentList = () => {
   const completedCount = useMemo(
     () =>
       appts.filter((a) =>
-        ["done", "completed"].includes(
+        ["done", "complete"].includes(
           (a.consultationStatus || "").toLowerCase(),
         ),
       ).length,
@@ -84,14 +85,14 @@ const DoctorsAppointmentList = () => {
     if (filter === "pending") {
       return appts.filter(
         (a) =>
-          !["done", "completed"].includes(
+          !["done", "complete"].includes(
             (a.consultationStatus || "").toLowerCase(),
           ),
       );
     }
     if (filter === "done") {
       return appts.filter((a) =>
-        ["done", "completed"].includes(
+        ["done", "complete"].includes(
           (a.consultationStatus || "").toLowerCase(),
         ),
       );
@@ -213,7 +214,7 @@ const DoctorsAppointmentList = () => {
                 appt.consultationStatus,
                 appt.appointmentStatus,
               );
-              const done = ["done", "completed"].includes(
+              const done = ["done", "complete"].includes(
                 (appt.consultationStatus || "").toLowerCase(),
               );
 

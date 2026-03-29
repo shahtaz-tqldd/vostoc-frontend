@@ -111,6 +111,7 @@ export type ConsultationAppointment = {
   appointmentTime?: string
   appointmentStatus?: string
   consultationStatus?: string
+  patientId?: string
   patientName?: string
   patientAge?: number
   patientGender?: string

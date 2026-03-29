@@ -1,4 +1,10 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,9 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MoreHorizontal, Plus, Users, Edit, Trash } from "lucide-react";
-import {
-  useDeleteDepartmentMutation,
-} from "@/features/department/departmentApi";
+import { useDeleteDepartmentMutation } from "@/features/department/departmentApi";
 import DeleteDialog from "@/components/layout/DeleteDialog";
 import { useState } from "react";
 import NoDataFound from "@/components/layout/NoDataFound";
@@ -36,6 +40,10 @@ const DepartmentListPage = () => {
   const totalDepartment = departments.length;
   return (
     <>
+      <div className="mb-6">
+        <CardTitle>Departments</CardTitle>
+        <CardDescription>Manage existing departments, doctors and staff</CardDescription>
+      </div>
       {!totalDepartment && (
         <div className="py-10">
           <NoDataFound title="departments" />

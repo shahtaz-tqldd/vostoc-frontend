@@ -1,15 +1,26 @@
-import { useState, type ChangeEvent } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import { CheckCircle2, FileText, Upload } from "lucide-react";
 
-const ReportPanel = ({ isFollowUp }: { isFollowUp: boolean }) => {
-  const [uploads, setUploads] = useState<string[]>([]);
+const ReportPanel = ({
+  isFollowUp,
+  onUploadsChange,
+}: {
+  isFollowUp: boolean;
+  onUploadsChange?: (uploads: File[]) => void;
+}) => {
+  const [uploads, setUploads] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    onUploadsChange?.(uploads);
+  }, [onUploadsChange, uploads]);
+
   const handleUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
     setUploading(true);
     setTimeout(() => {
-      setUploads((prev) => [...prev, ...files.map((f: File) => f.name)]);
+      setUploads((prev) => [...prev, ...files]);
       setUploading(false);
     }, 800);
   };
@@ -63,13 +74,13 @@ const ReportPanel = ({ isFollowUp }: { isFollowUp: boolean }) => {
       </label>
       {uploads.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-2">
-          {uploads.map((r, i) => (
+          {uploads.map((report, i) => (
             <span
               key={i}
               className="flex items-center gap-1 text-xs bg-blue-50 text-blue-600 border border-blue-200 px-2 py-0.5 rounded-full"
             >
               <FileText size={10} />
-              {r}
+              {report.name}
             </span>
           ))}
         </div>

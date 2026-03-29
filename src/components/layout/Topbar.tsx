@@ -20,6 +20,9 @@ import { clearAuth } from "@/features/auth/authSlice";
 import { deleteCookie } from "@/lib/cookie";
 import { getProfileItemsByRole } from "@/config/navigation";
 import { selectDepartmentOptionsWithSpecialties } from "@/features/department/departmentSlice";
+import moment from "moment";
+import { AddDepartmentDialog } from "@/pages/admin/departments/add-department-dialog";
+import AddDoctorDialog from "@/pages/admin/doctors/add-doctor-dialog";
 
 export type TopbarProps = {
   title: string;
@@ -28,10 +31,34 @@ export type TopbarProps = {
 
 export function CommonTopbar({ title, subtitle }: TopbarProps) {
   const location = useLocation();
+
   const isReceptionPage = location.pathname === "/receptionist";
+  const isDoctorPage = location.pathname === "/doctors";
+  const isDepartmentPage = location.pathname === "/departments";
+
   const [addReceptionist, setAddReceptionist] = useState(false);
   const [appointmentBookingOpen, setAppointmentBookingOpen] = useState(false);
-  const departmentOptions = useAppSelector(selectDepartmentOptionsWithSpecialties);
+  const [addDoctor, setAddDoctor] = useState(false);
+  const [addDepartment, setAddDepartment] = useState(false);
+
+  const departmentOptions = useAppSelector(
+    selectDepartmentOptionsWithSpecialties,
+  );
+
+  const handleAddOption = () => {
+    if (isReceptionPage) setAddReceptionist(true);
+    else if (isDoctorPage) setAddDoctor(true);
+    else if (isDepartmentPage) setAddDepartment(true);
+    else setAppointmentBookingOpen(true);
+  };
+
+  const addText = isReceptionPage
+    ? "Add Receptionist"
+    : isDoctorPage
+      ? "Add Doctor"
+      : isDepartmentPage
+        ? "Add Department"
+        : "New Appointment";
   return (
     <>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -53,16 +80,9 @@ export function CommonTopbar({ title, subtitle }: TopbarProps) {
             />
           </div>
 
-          <Button
-            variant="primary"
-            onClick={
-              isReceptionPage
-                ? () => setAddReceptionist(true)
-                : () => setAppointmentBookingOpen(true)
-            }
-          >
+          <Button variant="primary" onClick={handleAddOption}>
             <Plus size={14} />
-            {isReceptionPage ? "Add Receptionist" : "New appointment"}
+            {addText}
           </Button>
           <ProfileMenu />
         </div>
@@ -78,6 +98,15 @@ export function CommonTopbar({ title, subtitle }: TopbarProps) {
         onOpenChange={setAppointmentBookingOpen}
         departmentOptions={departmentOptions}
       />
+      <AddDepartmentDialog
+        open={addDepartment}
+        onOpenChange={setAddDepartment}
+      />
+      <AddDoctorDialog
+        open={addDoctor}
+        onOpenChange={setAddDoctor}
+        departmentOptions={departmentOptions}
+      />
     </>
   );
 }
@@ -86,7 +115,10 @@ export function ReceptionistTopbar({ title, subtitle }: TopbarProps) {
   const location = useLocation();
   const isReceptionPage = location.pathname === "/receptionist";
   const [addReceptionist, setAddReceptionist] = useState(false);
-  const departmentOptions = useAppSelector(selectDepartmentOptionsWithSpecialties);
+
+  const departmentOptions = useAppSelector(
+    selectDepartmentOptionsWithSpecialties,
+  );
   return (
     <>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -141,10 +173,10 @@ export function DoctorTopbar() {
     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div>
         <h1 className="text-xl font-bold text-gray-800">
-          Good morning, <span className="text-slate-500">{doctorName}</span>
+          Good day, Dr. {doctorName}
         </h1>
         <p className="text-sm text-gray-400 mt-0.5">
-          Monday, February 2 · 2026
+          {moment().format("dddd, MMMM D, YYYY")}
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-3">

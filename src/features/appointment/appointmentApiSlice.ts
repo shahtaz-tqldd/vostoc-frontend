@@ -103,10 +103,23 @@ export const appointmentApi = createApi({
 
     updateAppointment: builder.mutation<
       void,
-      { appointmentId: string; payload: UpdateAppointmentPayload }
+      { appointmentId: string; payload: UpdateAppointmentPayload | FormData }
     >({
       query: ({ appointmentId, payload }) => ({
         url: `/appointments/${appointmentId}`,
+        method: 'PATCH',
+        body: payload,
+      }),
+      invalidatesTags: [{ type: 'Appointment', id: 'LIST' }],
+    }),
+
+
+    completeConsultation: builder.mutation<
+      void,
+      { appointmentId: string; payload: UpdateAppointmentPayload | FormData }
+    >({
+      query: ({ appointmentId, payload }) => ({
+        url: `/appointments/${appointmentId}/consultation`,
         method: 'PATCH',
         body: payload,
       }),
@@ -165,5 +178,6 @@ export const {
   useGetStatsQuery,
   useGetAppointmentQueueQuery,
   useGetMyAppointmentsQuery,
-  useGetConsultationDataQuery
+  useGetConsultationDataQuery,
+  useCompleteConsultationMutation
 } = appointmentApi

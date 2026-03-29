@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   Calendar,
   ChartNoAxesGantt,
+  House,
   Layers,
   MessagesSquare,
   Stethoscope,
@@ -24,22 +25,28 @@ export const adminSidebarItems: NavMenuItem[] = [
     icon: Layers,
   },
   {
-    label: "Doctors",
-    description: "Credentials and schedules",
-    to: "/doctors/list",
-    icon: Stethoscope,
+    label: "Departments",
+    description: "Department details and staffing",
+    to: "/departments",
+    icon: House,
   },
   {
-    label: "Appointments",
-    description: "Slots and assignments",
-    to: "/appointment-list",
-    icon: ChartNoAxesGantt,
+    label: "Doctors",
+    description: "Doctor profiles and schedules",
+    to: "/doctors",
+    icon: Stethoscope,
   },
   {
     label: "Receptionist",
     description: "Capacity planning",
     to: "/receptionist",
     icon: Users,
+  },
+  {
+    label: "Appointments",
+    description: "Slots and assignments",
+    to: "/appointments",
+    icon: ChartNoAxesGantt,
   },
 ];
 
@@ -53,13 +60,13 @@ export const receptionistSidebarItems: NavMenuItem[] = [
   {
     label: "Appointment List",
     description: "History and notes",
-    to: "/appointment-list",
+    to: "/appointments",
     icon: ChartNoAxesGantt,
   },
   {
     label: "Doctors",
     description: "History and notes",
-    to: "/doctors-list",
+    to: "/doctors",
     icon: Stethoscope,
   },
   {

@@ -1,8 +1,4 @@
 import {
-  Calendar,
-  ChevronDown,
-  ChevronUp,
-  FileText,
   Heart,
   Pill,
   TriangleAlert,
@@ -20,7 +16,6 @@ import type {
   ConsultationPastAppointment,
   LatestVitals,
 } from "@/features/appointment/type";
-import ReportPanel from "./report-panel";
 
 type PatientProfileProps = {
   currentAppointment: ConsultationAppointment;

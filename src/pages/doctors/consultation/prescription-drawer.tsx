@@ -1,9 +1,69 @@
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+
 import { CheckCircle2, Plus, Printer, Save, Trash2 } from "lucide-react";
 import type {
   PrescriptionDraft,
   PrescriptionMedicine,
   PrescriptionStage,
-} from "./index";
+} from "./type";
+
+interface PrescriptionDrawerProps {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  pStage: PrescriptionStage;
+  setPStage: (stage: PrescriptionStage) => void;
+  prescription: PrescriptionDraft | null;
+  setPrescription: (prescription: PrescriptionDraft) => void;
+}
+
+const PrescriptionDrawer = ({
+  open,
+  setOpen,
+  pStage,
+  setPStage,
+  prescription,
+  setPrescription,
+}: PrescriptionDrawerProps) => {
+  return (
+    <Drawer open={open} onOpenChange={setOpen}>
+      <DrawerContent className="h-screen overflow-y-auto">
+        <DrawerHeader>
+          <DrawerTitle>AI-Generated Prescription</DrawerTitle>
+          <DrawerDescription>
+            Review, edit, and finalize the prescription before saving.
+          </DrawerDescription>
+        </DrawerHeader>
+        <div className="mt-4 border border-slate-200 rounded-2xl p-4 bg-white">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+              Draft Status
+            </span>
+            <span
+              className={`text-xs font-bold px-2.5 py-1 rounded-full ${pStage === "saved" || pStage === "printed" ? "bg-emerald-100 text-emerald-700 border border-emerald-200" : "bg-indigo-50 text-indigo-600 border border-indigo-200"}`}
+            >
+              {pStage === "saved" || pStage === "printed" ? "Saved" : "Draft"}
+            </span>
+          </div>
+          <PrescriptionEditor
+            prescription={prescription}
+            setPrescription={setPrescription}
+            stage={pStage}
+            onSave={() => setPStage("saved")}
+            onPrint={() => setPStage("printed")}
+          />
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
+};
+
+export default PrescriptionDrawer;
 
 type PrescriptionEditorProps = {
   prescription: PrescriptionDraft | null;
@@ -24,11 +84,7 @@ const PrescriptionEditor = ({
 }: PrescriptionEditorProps) => {
   if (!prescription) return null;
 
-  const updateMed = (
-    i: number,
-    f: keyof Omit<PrescriptionMedicine, "notes">,
-    v: string,
-  ) => {
+  const updateMed = (i: number, f: keyof PrescriptionMedicine, v: string) => {
     const m = [...prescription.medicines];
     m[i] = { ...m[i], [f]: v };
     setPrescription({ ...prescription, medicines: m });
@@ -43,7 +99,13 @@ const PrescriptionEditor = ({
       ...prescription,
       medicines: [
         ...prescription.medicines,
-        { medicine: "", dose: "", frequency: "", duration: "", notes: "" },
+        {
+          medicine: "",
+          dose: "",
+          frequency: "",
+          duration: "",
+          notes: "",
+        },
       ],
     });
 
@@ -67,21 +129,6 @@ const PrescriptionEditor = ({
 
   return (
     <div className="space-y-5">
-      {/* Diagnosis */}
-      <div>
-        <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-          Diagnosis
-        </label>
-        <textarea
-          value={prescription.diagnosis}
-          onChange={(e) =>
-            setPrescription({ ...prescription, diagnosis: e.target.value })
-          }
-          className="w-full mt-1 text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-indigo-400"
-          rows={2}
-        />
-      </div>
-
       {/* Medicines */}
       <div>
         <div className="flex items-center justify-between mb-2">
@@ -118,28 +165,20 @@ const PrescriptionEditor = ({
                   ["dose", "Dose"],
                   ["frequency", "Frequency"],
                   ["duration", "Duration"],
+                  ["notes", "Notes"],
                 ].map(([f, l]) => (
                   <div key={f}>
                     <p className="text-xs text-gray-400 mb-0.5">{l}</p>
                     <input
-                      value={med[f as keyof Omit<PrescriptionMedicine, "notes">]}
+                      value={med[f as keyof PrescriptionMedicine]}
                       onChange={(e) =>
-                        updateMed(
-                          i,
-                          f as keyof Omit<PrescriptionMedicine, "notes">,
-                          e.target.value,
-                        )
+                        updateMed(i, f as keyof PrescriptionMedicine, e.target.value)
                       }
                       className="w-full text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-400"
                     />
                   </div>
                 ))}
               </div>
-              {med.notes && (
-                <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-2.5 py-1 border border-amber-200">
-                  💡 {med.notes}
-                </p>
-              )}
             </div>
           ))}
         </div>
@@ -166,9 +205,7 @@ const PrescriptionEditor = ({
             >
               <input
                 value={advice}
-                onChange={(e) =>
-                  updateListItem("advices", i, e.target.value)
-                }
+                onChange={(e) => updateListItem("advices", i, e.target.value)}
                 className="flex-1 text-xs font-semibold text-gray-700 bg-transparent focus:outline-none"
                 placeholder="Add lifestyle or safety advice"
               />
@@ -281,5 +318,3 @@ const PrescriptionEditor = ({
     </div>
   );
 };
-
-export default PrescriptionEditor;

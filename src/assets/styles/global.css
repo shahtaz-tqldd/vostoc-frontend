@@ -27,3 +27,19 @@ body {
 ::selection {
   background: rgba(45, 212, 191, 0.35);
 }
+
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flbx {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tr{
+  transition: 300ms;
+}

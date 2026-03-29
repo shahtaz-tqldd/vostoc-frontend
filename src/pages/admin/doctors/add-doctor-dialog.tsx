@@ -29,6 +29,7 @@ import {
   UserRound,
   MoveRight,
 } from "lucide-react";
+import { useCreateDoctorMutation } from "@/features/doctors/doctorsApi";
 
 type SelectOption = {
   label: string;
@@ -65,8 +66,6 @@ type AddDoctorDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   departmentOptions: SelectOption[];
-  onSubmit: (payload: AddDoctorPayload) => void | Promise<void>;
-  isLoading?: boolean;
 };
 
 const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -75,8 +74,6 @@ export default function AddDoctorDialog({
   open,
   onOpenChange,
   departmentOptions,
-  onSubmit,
-  isLoading = false,
 }: AddDoctorDialogProps) {
   const fileInputId = useId();
   const [currentStep, setCurrentStep] = useState(1);
@@ -182,12 +179,13 @@ export default function AddDoctorDialog({
     }));
   };
 
-  // Fixed TypeScript error by adding proper type annotation
+  const [createDoctor, { isLoading }] = useCreateDoctorMutation();
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!isValid) return;
 
-    await onSubmit({
+    const payload = {
       name: name.trim(),
       username: username.trim(),
       password: password.trim(),
@@ -197,21 +195,50 @@ export default function AddDoctorDialog({
       contactNumber: contactNumber.trim(),
       description: description.trim() || undefined,
       schedule,
-    });
+    };
 
-    // Reset form
-    setName("");
-    setUsername("");
-    setPassword("");
-    setImageFile(null);
-    setImagePreview("");
-    setDepartment("");
-    setSpecialty("");
-    setContactNumber("");
-    setDescription("");
-    setSchedule({});
-    setCurrentStep(1);
-    onOpenChange(false);
+    const schedules = Object.entries(payload.schedule)
+      .filter(([, ranges]) => ranges.length > 0)
+      .map(([dayName, ranges]) => ({
+        [dayName]: ranges
+          .filter((range) => range.startTime && range.endTime)
+          .map((range) => ({
+            start_time: range.startTime,
+            end_time: range.endTime,
+          })),
+      }))
+      .filter((entry) => {
+        const dayName = Object.keys(entry)[0];
+        return entry[dayName].length > 0;
+      });
+
+    const res = await createDoctor({
+      name: payload.name,
+      username: payload.username,
+      password: payload.password,
+      department_id: payload.department,
+      specialty: payload.specialty,
+      contact_number: payload.contactNumber,
+      description: payload.description,
+      schedules,
+      image: payload.imageFile,
+    }).unwrap();
+
+    if (res?.success) {
+      // Reset form
+      setName("");
+      setUsername("");
+      setPassword("");
+      setImageFile(null);
+      setImagePreview("");
+      setDepartment("");
+      setSpecialty("");
+      setContactNumber("");
+      setDescription("");
+      setSchedule({});
+      setCurrentStep(1);
+      onOpenChange(false);
+    }
   };
 
   const nextStep = () => {
@@ -313,7 +340,9 @@ export default function AddDoctorDialog({
                         disabled={isLoading}
                         className="h-10 w-full justify-between rounded-xl bg-white px-3 font-normal"
                       >
-                        <span className="truncate">{selectedDepartmentLabel}</span>
+                        <span className="truncate">
+                          {selectedDepartmentLabel}
+                        </span>
                         <ChevronDown className="h-4 w-4 opacity-60" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -348,14 +377,14 @@ export default function AddDoctorDialog({
                         <DropdownMenuRadioItem value="__none">
                           Unselect
                         </DropdownMenuRadioItem>
-                      {departmentOptions.map((option) => (
-                        <DropdownMenuRadioItem
-                          key={option.value}
-                          value={option.value}
-                        >
-                          {option.label}
-                        </DropdownMenuRadioItem>
-                      ))}
+                        {departmentOptions.map((option) => (
+                          <DropdownMenuRadioItem
+                            key={option.value}
+                            value={option.value}
+                          >
+                            {option.label}
+                          </DropdownMenuRadioItem>
+                        ))}
                       </DropdownMenuRadioGroup>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -370,7 +399,9 @@ export default function AddDoctorDialog({
                         disabled={!department || isLoading}
                         className="h-10 w-full justify-between rounded-xl bg-white px-3 font-normal"
                       >
-                        <span className="truncate">{selectedSpecialtyLabel}</span>
+                        <span className="truncate">
+                          {selectedSpecialtyLabel}
+                        </span>
                         <ChevronDown className="h-4 w-4 opacity-60" />
                       </Button>
                     </DropdownMenuTrigger>

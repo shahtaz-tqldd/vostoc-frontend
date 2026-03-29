@@ -11,14 +11,14 @@ type SidebarProps = {
 
 export function Sidebar({ items = [] }: SidebarProps) {
   return (
-    <div className="flex h-full flex-col gap-8">
-      <div className="space-y-2">
+    <div className="flex h-full flex-col gap-6">
+      <div className="space-y-1">
         <h2 className="text-blue-500 font-semibold">Vostoc</h2>
         <h1 className="font-display text-xl font-semibold text-ink-900">
           Appointment Ops
         </h1>
         <p className="text-sm text-gray-500">
-          Unified control center for doctors, clinics, and patient flow.
+          Unified control center for appointments, doctors, and patients flow.
         </p>
       </div>
 
@@ -30,7 +30,7 @@ export function Sidebar({ items = [] }: SidebarProps) {
             end
             className={({ isActive }) =>
               cn(
-                "block rounded-2xl border px-4 py-3 transition",
+                "block rounded-2xl border px-3 py-2.5 transition",
                 isActive
                   ? "border-ink-900 bg-ink-900 text-white shadow-glow"
                   : "border-ink-200/70 bg-white/70 text-ink-700 hover:border-ink-400",
