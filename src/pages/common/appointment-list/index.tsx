@@ -22,6 +22,7 @@ import { useAppSelector } from "@/app/hooks";
 // icons
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import AppointmentDetailsDrawer from "./appointment-details-drawer";
+import ProfileItem from "@/components/layout/ProfileItem";
 
 export interface AppointmentRow {
   id: string;
@@ -33,7 +34,7 @@ export interface AppointmentRow {
     | {
         id: string;
         name: string;
-        image_url?: string;
+        profileImageUrl?: string;
         department?: { id?: string; name?: string };
         specialty?: { name?: string };
       }
@@ -143,12 +144,13 @@ export default function AppointmentListPage() {
       accessorKey: "patient",
       cell: (row) => {
         return (
-          <div>
-            <h2>{row.patient}</h2>
-            <p className="text-xs opacity-60">
-              Age: {row.patientAge || "N/A"} • {row.patientGender || "N/A"}
-            </p>
-          </div>
+          <ProfileItem
+            title={row.patient}
+            subtitle={`Age: ${row.patientAge || "N/A"} • ${
+              row.patientGender || "N/A"
+            }`}
+            link={`/patients/${row.id}`}
+          />
         );
       },
     },
@@ -162,13 +164,12 @@ export default function AppointmentListPage() {
       accessorKey: "doctor",
       cell: (row) => {
         return (
-          <div>
-            <h2>{row.doctor?.name || "Unassigned"}</h2>
-            <p className="text-xs opacity-60">
-              {row.doctor?.department?.name || "No Department"} •{" "}
-              {row.doctor?.specialty?.name || "No Specialization"}
-            </p>
-          </div>
+          <ProfileItem
+            title={row.doctor?.name || "Unassigned"}
+            image_url={row.doctor?.profileImageUrl}
+            subtitle={`${row.doctor?.department?.name || "No Department"} • ${row.doctor?.specialty?.name || "No Specialization"}`}
+            link={`/doctors/${row.doctorId}`}
+          />
         );
       },
     },

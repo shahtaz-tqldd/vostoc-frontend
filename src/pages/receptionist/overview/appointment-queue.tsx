@@ -1,14 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Phone, User, Stethoscope, Dot } from "lucide-react";
+import { Phone, User } from "lucide-react";
 import { useGetAppointmentQueueQuery } from "@/features/appointment/appointmentApiSlice";
 import NoDataFound from "@/components/layout/NoDataFound";
 import type { AppointmentQueueItem } from "@/features/appointment/type";
+import ProfileItem from "@/components/layout/ProfileItem";
 
 const AppointmentQueue = () => {
   const { data, isLoading, isError } = useGetAppointmentQueueQuery();
   const queueData: AppointmentQueueItem[] = Array.isArray(data)
     ? data
-    : data?.data ?? [];
+    : (data?.data ?? []);
 
   if (isLoading) {
     return (
@@ -61,23 +62,14 @@ const AppointmentQueue = () => {
           <Card key={index}>
             <CardHeader className="pb-3 border-b bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-3xl overflow-hidden">
               <div className="flex items-start gap-3">
-                <div className="rounded-full bg-blue-100 p-2">
-                  <Stethoscope size={18} className="text-blue-600" />
-                </div>
-                <div className="flex-1">
-                  <CardTitle className="text-base font-semibold text-gray-900">
-                    {queue.doctor?.name || "N/A"}
-                  </CardTitle>
-                  <div className="flex items-center">
-                    <p className="text-xs text-gray-600">
-                      {queue.department?.name || "N/A"}
-                    </p>
-                    <Dot />
-                    <p className="text-xs text-gray-500">
-                      {queue.doctor?.specialty?.name || "N/A"}
-                    </p>
-                  </div>
-                </div>
+                <ProfileItem
+                  title={queue.doctor?.name || "Unassigned Doctor"}
+                  image_url={queue.doctor?.profileImageUrl}
+                  subtitle={`${queue?.department?.name || "No Department"} • ${queue.doctor?.specialty?.name || "No Specialization"}`}
+                  link={
+                    queue.doctor ? `/doctors/${queue.doctor.id}` : undefined
+                  }
+                />
               </div>
             </CardHeader>
 
@@ -89,20 +81,15 @@ const AppointmentQueue = () => {
                     Next Patient
                   </span>
                 </div>
-
-                <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
-                  <p className="text-sm font-semibold text-gray-900">
-                    {patient.name || "Unknown patient"}
+                <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 flbx">
+                  <ProfileItem
+                    title={patient.name || "Unknown patient"}
+                    subtitle={`Age ${patient.age ?? "N/A"} • ${patient.gender || "N/A"}`}
+                  />
+                  <p className="text-xs text-gray-600 mt-1 flex items-center gap-1.5">
+                    <Phone size={12} />
+                    {patient.contact || "N/A"}
                   </p>
-                  <div className="flex justify-between">
-                    <p className="text-xs text-gray-600 mt-1">
-                      Age {patient.age ?? "N/A"} • {patient.gender || "N/A"}
-                    </p>
-                    <p className="text-xs text-gray-600 mt-1 flex items-center gap-1.5">
-                      <Phone size={12} />
-                      {patient.contact || "N/A"}
-                    </p>
-                  </div>
                 </div>
               </div>
 

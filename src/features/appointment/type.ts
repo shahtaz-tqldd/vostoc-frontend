@@ -97,6 +97,7 @@ export type AppointmentQueueItem = {
   doctor?: {
     id?: string
     name?: string
+    profileImageUrl?: string
     specialty?: {
       id?: string
       name?: string

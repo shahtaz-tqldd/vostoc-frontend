@@ -8,11 +8,13 @@ import type {
 } from './type'
 import type { ApiResponse } from '../base-type'
 
+const baseUrl = import.meta.env.VITE_API_BASE_URL
+
 export const receptionistApi = createApi({
   reducerPath: 'receptionistApi',
   tagTypes: ['Receptionist'],
   baseQuery: fetchBaseQuery({
-    baseUrl: 'http://localhost:6500',
+    baseUrl: baseUrl,
     prepareHeaders: (headers) => {
       const token = getCookie('token')
       if (token) {
@@ -104,10 +106,10 @@ export const receptionistApi = createApi({
       query: (params) => {
         const cleanedParams = params
           ? Object.fromEntries(
-              Object.entries(params).filter(
-                ([, value]) => value !== undefined && value !== '',
-              ),
-            )
+            Object.entries(params).filter(
+              ([, value]) => value !== undefined && value !== '',
+            ),
+          )
           : undefined
 
         return {

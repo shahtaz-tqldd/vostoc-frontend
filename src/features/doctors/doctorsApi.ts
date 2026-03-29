@@ -11,11 +11,13 @@ import type {
 } from './type'
 import type { ApiResponse } from '../base-type'
 
+const baseUrl = import.meta.env.VITE_API_BASE_URL
+
 export const doctorsApi = createApi({
   reducerPath: 'doctorsApi',
   tagTypes: ['Doctor'],
   baseQuery: fetchBaseQuery({
-    baseUrl: 'http://localhost:6500',
+    baseUrl: baseUrl,
     prepareHeaders: (headers) => {
       const token = getCookie('token')
       if (token) {

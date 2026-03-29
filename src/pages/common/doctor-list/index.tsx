@@ -40,7 +40,7 @@ import {
 
 // icons
 import { CalendarDays, Clock3, Eye, Pencil, Trash2 } from "lucide-react";
-
+import ProfileItem from "@/components/layout/ProfileItem";
 
 type DoctorRow = {
   id: string;
@@ -71,20 +71,12 @@ const getDoctorColumns = (
       header: "Doctor",
       accessorKey: "name",
       cell: (row) => (
-        <div className="flex items-center gap-3">
-          <Avatar className="h-11 w-11">
-            <AvatarImage src={row.imageUrl} alt={row.name} />
-            <AvatarFallback>
-              {row.name.split(" ")[1]?.charAt(0) || row.name.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <div className="text-base font-medium">{row.name}</div>
-            <div className="text-sm uppercase text-muted-foreground">
-              doc-{row.id.slice(-6)}
-            </div>
-          </div>
-        </div>
+        <ProfileItem
+          title={row.name || "Annonymous Doctor"}
+          image_url={row.imageUrl}
+          subtitle={`doc-${row.id.slice(-6)}`}
+          link={`/doctors/${row.id}`}
+        />
       ),
     },
     {

@@ -1,6 +1,5 @@
 // components
 import NoDataFound from "@/components/layout/NoDataFound";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { StatusBadge } from "@/components/ui/badge";
 import {
   Card,
@@ -17,6 +16,7 @@ import { getFillPercentage } from "@/lib/utils";
 
 // types
 import type { ActiveDoctor } from "@/features/doctors/type";
+import ProfileItem from "@/components/layout/ProfileItem";
 
 export default function ActiveDoctorList() {
   const { data, isLoading } = useGetActiveDoctorsQuery();
@@ -50,22 +50,12 @@ export default function ActiveDoctorList() {
                 {/* Top Section */}
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-9 w-9">
-                      <AvatarImage
-                        src={item.profileImageUrl || undefined}
-                        alt={item.name}
-                      />
-                      <AvatarFallback>{item.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-
-                    <div>
-                      <div className="text-sm font-semibold text-ink-900">
-                        {item.name}
-                      </div>
-                      <div className="text-xs text-ink-500">
-                        {item.department.name}
-                      </div>
-                    </div>
+                    <ProfileItem
+                      title={item.name}
+                      image_url={item.profileImageUrl || ""}
+                      subtitle={`${item.department.name}`}
+                      link={`/doctors/${item.doctorId}`}
+                    />
                   </div>
 
                   <StatusBadge label="Active" status="success" />

@@ -37,6 +37,7 @@ import DeleteDialog from "@/components/layout/DeleteDialog";
 import UpsertReceptionistDialog, {
   type UpsertReceptionistInitialData,
 } from "./upsert-receptionist-dialog";
+import ProfileItem from "@/components/layout/ProfileItem";
 
 type DepartmentRef = {
   id?: string;
@@ -117,20 +118,12 @@ const getReceptionistColumns = (
     header: "Receptionist",
     accessorKey: "name",
     cell: (row) => (
-      <div className="flex items-center gap-3">
-        <Avatar className="h-11 w-11">
-          <AvatarImage src={row.profile_image_url} alt={row.name} />
-          <AvatarFallback>
-            {row.name.split(" ")[1]?.charAt(0) || row.name.charAt(0)}
-          </AvatarFallback>
-        </Avatar>
-        <div>
-          <div className="font-medium text-base">{row.name}</div>
-          <div className="text-sm text-muted-foreground uppercase">
-            rec-{row.id.slice(-4)}
-          </div>
-        </div>
-      </div>
+      <ProfileItem
+        title={row.name || "Annonymous Receptionist"}
+        image_url={row.profile_image_url}
+        subtitle={`rec-${row.id.slice(-6)}`}
+        link={`/receptionists/${row.id}`}
+      />
     ),
   },
   {

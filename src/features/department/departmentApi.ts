@@ -6,11 +6,13 @@ import type {
   DepartmentDetails,
 } from './type'
 
+const baseUrl = import.meta.env.VITE_API_BASE_URL
+
 export const departmentApi = createApi({
   reducerPath: 'departmentApi',
   tagTypes: ['Department'],
   baseQuery: fetchBaseQuery({
-    baseUrl: 'http://localhost:6500',
+    baseUrl: baseUrl,
     prepareHeaders: (headers) => {
       const token = getCookie('token')
       if (token) {
@@ -25,12 +27,12 @@ export const departmentApi = createApi({
       providesTags: (result) =>
         result
           ? [
-              { type: 'Department' as const, id: 'LIST' },
-              ...result.map((dept) => ({
-                type: 'Department' as const,
-                id: dept.id,
-              })),
-            ]
+            { type: 'Department' as const, id: 'LIST' },
+            ...result.map((dept) => ({
+              type: 'Department' as const,
+              id: dept.id,
+            })),
+          ]
           : [{ type: 'Department' as const, id: 'LIST' }],
     }),
 

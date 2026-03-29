@@ -212,7 +212,7 @@ export default function AddDoctorDialog({
         return entry[dayName].length > 0;
       });
 
-    const res = await createDoctor({
+    await createDoctor({
       name: payload.name,
       username: payload.username,
       password: payload.password,
@@ -224,21 +224,18 @@ export default function AddDoctorDialog({
       image: payload.imageFile,
     }).unwrap();
 
-    if (res?.success) {
-      // Reset form
-      setName("");
-      setUsername("");
-      setPassword("");
-      setImageFile(null);
-      setImagePreview("");
-      setDepartment("");
-      setSpecialty("");
-      setContactNumber("");
-      setDescription("");
-      setSchedule({});
-      setCurrentStep(1);
-      onOpenChange(false);
-    }
+    setName("");
+    setUsername("");
+    setPassword("");
+    setImageFile(null);
+    setImagePreview("");
+    setDepartment("");
+    setSpecialty("");
+    setContactNumber("");
+    setDescription("");
+    setSchedule({});
+    setCurrentStep(1);
+    onOpenChange(false);
   };
 
   const nextStep = () => {

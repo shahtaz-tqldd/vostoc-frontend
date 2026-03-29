@@ -21,10 +21,13 @@ export type MeResponse = {
   role: string
 }
 
+const baseUrl = import.meta.env.VITE_API_BASE_URL
+
+
 export const authApi = createApi({
   reducerPath: 'authApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: 'http://localhost:6500',
+    baseUrl: baseUrl,
     prepareHeaders: (headers) => {
       const token = getCookie('token')
       if (token) {

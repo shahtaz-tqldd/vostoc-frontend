@@ -21,11 +21,13 @@ export type AppointmentQueryParams = {
   status?: string
 }
 
+const baseUrl = import.meta.env.VITE_API_BASE_URL
+
 export const appointmentApi = createApi({
   reducerPath: 'appointmentApi',
   tagTypes: ['Appointment'],
   baseQuery: fetchBaseQuery({
-    baseUrl: 'http://localhost:6500',
+    baseUrl: baseUrl,
     prepareHeaders: (headers) => {
       const token = getCookie('token')
       if (token) {

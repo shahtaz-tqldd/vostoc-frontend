@@ -77,7 +77,7 @@ export function RoleLayout() {
   const sidebarItems = getSidebarItemsByRole(effectiveRole);
 
   const topbarTitle =
-    effectiveRole === "admin" ? "Admin dashboard" : "Receptionist dashboard";
+    effectiveRole === "admin" ? "Administration" : "Management";
 
   const topbarSubtitle =
     effectiveRole === "admin"
