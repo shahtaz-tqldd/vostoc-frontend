@@ -259,6 +259,169 @@
   }
 }
 
+.healthcheck-root {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.healthcheck-root::before,
+.healthcheck-root::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(90px);
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.healthcheck-root::before {
+  width: 360px;
+  height: 360px;
+  background: rgba(20, 184, 166, 0.26);
+  top: -100px;
+  left: -80px;
+}
+
+.healthcheck-root::after {
+  width: 320px;
+  height: 320px;
+  background: rgba(251, 146, 60, 0.2);
+  right: -70px;
+  bottom: -90px;
+}
+
+.healthcheck-shell {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 540px);
+}
+
+.healthcheck-badge {
+  width: fit-content;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 auto 16px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  backdrop-filter: blur(16px);
+}
+
+.healthcheck-card {
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 28px;
+  padding: 36px 32px;
+  box-shadow:
+    0 16px 40px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(18px);
+}
+
+.healthcheck-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0f766e, #14b8a6);
+  color: #f8fafc;
+  box-shadow: 0 14px 30px rgba(20, 184, 166, 0.24);
+}
+
+.healthcheck-pulse {
+  animation: healthcheck-pulse 1.6s ease-in-out infinite;
+}
+
+.healthcheck-copy {
+  margin-top: 22px;
+}
+
+.healthcheck-copy h1 {
+  margin: 0;
+  color: #0f172a;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(28px, 4vw, 36px);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.healthcheck-copy p {
+  margin: 12px 0 0;
+  color: #475569;
+  font-size: 15px;
+  line-height: 1.65;
+  max-width: 44ch;
+}
+
+.healthcheck-meta {
+  margin-top: 28px;
+  padding: 18px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(240, 249, 255, 0.95), rgba(236, 253, 245, 0.95));
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.healthcheck-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.healthcheck-status {
+  margin-top: 10px;
+  color: #0f766e;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.healthcheck-note {
+  margin: 18px 0 0;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+@keyframes healthcheck-pulse {
+  0%,
+  100% {
+    transform: scale(0.95);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .healthcheck-card {
+    padding: 28px 22px;
+    border-radius: 24px;
+  }
+
+  .healthcheck-copy p {
+    max-width: none;
+  }
+}
+
 /* ── Submit btn ── */
 .submit-btn {
   width: 100%;
